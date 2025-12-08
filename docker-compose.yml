@@ -1,16 +1,49 @@
 version: '3.8'
+
 services:
-  postgres:
-    image: postgres:15
-    container_name: zapcar_db
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: zapcar-backend
+    container_name: zapcar_backend
+    restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: zapcar
-    ports:
-      - "5432:5432"
+      # Database Persistence
+      DATABASE_PATH: /app/data/zapcar_v3.db
+      # Keys (You must set these in Coolify UI Variables)
+      ASAAS_API_URL: ${ASAAS_API_URL}
+      ASAAS_API_KEY: ${ASAAS_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      # JWT Secret
+      JWT_SECRET: ${JWT_SECRET:-secretKey}
+      PORT: 3000
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Persist SQLite Database
+      - zapcar_data:/app/data
+      # Persist Uploads
+      - zapcar_uploads:/app/uploads
+      # Persist WhatsApp Session
+      - whatsapp_session:/app/.wwebjs_auth
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Important: Frontend needs to know Backend URL at build time
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    image: zapcar-frontend
+    container_name: zapcar_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
-  postgres_data:
+  zapcar_data:
+  zapcar_uploads:
+  whatsapp_session:

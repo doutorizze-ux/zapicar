@@ -25,8 +25,6 @@ services:
       - zapcar_uploads:/app/uploads
       # Persist WhatsApp Session
       - whatsapp_session:/app/.wwebjs_auth
-    ports:
-      - "3000:3000"
 
   frontend:
     build:
@@ -38,8 +36,7 @@ services:
     image: zapcar-frontend
     container_name: zapcar_frontend
     restart: always
-    ports:
-      - "80:80"
+
     depends_on:
       - backend
 

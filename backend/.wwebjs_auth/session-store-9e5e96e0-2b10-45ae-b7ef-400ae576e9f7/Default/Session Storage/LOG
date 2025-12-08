@@ -1,0 +1,4 @@
+2025/12/07-11:32:55.995 402c Creating DB C:\Users\User\Documents\zapcar\backend\.wwebjs_auth\session-store-9e5e96e0-2b10-45ae-b7ef-400ae576e9f7\Default\Session Storage since it was missing.
+2025/12/07-11:32:55.998 402c Reusing MANIFEST C:\Users\User\Documents\zapcar\backend\.wwebjs_auth\session-store-9e5e96e0-2b10-45ae-b7ef-400ae576e9f7\Default\Session Storage/MANIFEST-000001
+2025/12/07-11:32:55.999 402c Recovering log #3
+2025/12/07-11:32:55.999 402c Reusing old log C:\Users\User\Documents\zapcar\backend\.wwebjs_auth\session-store-9e5e96e0-2b10-45ae-b7ef-400ae576e9f7\Default\Session Storage/000003.log 

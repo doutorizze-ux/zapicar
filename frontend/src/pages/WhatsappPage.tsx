@@ -1,0 +1,109 @@
+import { useEffect, useState } from 'react';
+import QRCode from 'react-qr-code';
+import { Smartphone, CheckCircle, RefreshCw } from 'lucide-react';
+
+export function WhatsappPage() {
+    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [status, setStatus] = useState<string>('DISCONNECTED');
+    const [loading, setLoading] = useState(true);
+
+    // Poll status every 5 seconds
+    useEffect(() => {
+        const fetchStatus = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return; // Or redirect to login
+
+            try {
+                const res = await fetch('http://localhost:3000/whatsapp/status', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setQrCode(data.qr);
+                    setStatus(data.status);
+                } else {
+                    console.error("Status fetch failed", res.status);
+                }
+                setLoading(false);
+            } catch (error) {
+                console.error("Failed to fetch WhatsApp status", error);
+                setLoading(false);
+            }
+        };
+
+        fetchStatus();
+        const interval = setInterval(fetchStatus, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-8">
+            <div>
+                <h2 className="text-3xl font-bold text-gray-900">Conexão WhatsApp</h2>
+                <p className="text-gray-500 mt-1">Conecte seu número para ativar o chatbot.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Status Card */}
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center space-y-6">
+                    <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
+                        {status === 'CONNECTED' ? (
+                            <CheckCircle className="w-8 h-8 text-green-500" />
+                        ) : (
+                            <Smartphone className="w-8 h-8 text-blue-600" />
+                        )}
+                    </div>
+
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                            {status === 'CONNECTED' ? 'WhatsApp Conectado' : 'Conectar Aparelho'}
+                        </h3>
+                        <p className="text-gray-500 mt-2 max-w-xs mx-auto">
+                            {status === 'CONNECTED'
+                                ? 'Seu bot está ativo e respondendo mensagens.'
+                                : 'Abra o WhatsApp no seu celular e escaneie o código QR.'}
+                        </p>
+                    </div>
+
+                    {status === 'CONNECTED' && (
+                        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                            Online e Operante
+                        </div>
+                    )}
+                </div>
+
+                {/* QR Code Card */}
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                    {loading ? (
+                        <div className="flex flex-col items-center gap-4 text-gray-400">
+                            <RefreshCw className="w-8 h-8 animate-spin" />
+                            <p>Carregando status...</p>
+                        </div>
+                    ) : status === 'CONNECTED' ? (
+                        <div className="text-center space-y-4">
+                            <div className="w-48 h-48 bg-gray-50 rounded-xl flex items-center justify-center mx-auto">
+                                <CheckCircle className="w-16 h-16 text-green-500 opacity-20" />
+                            </div>
+                            <p className="text-sm text-gray-500">Conexão estabelecida com sucesso.</p>
+                        </div>
+                    ) : qrCode ? (
+                        <div className="space-y-6 text-center">
+                            <div className="bg-white p-4 rounded-xl border-2 border-gray-100 inline-block">
+                                <QRCode value={qrCode} size={200} />
+                            </div>
+                            <p className="text-sm text-gray-400">Atualiza automaticamente a cada 5s</p>
+                        </div>
+                    ) : (
+                        <div className="text-center text-gray-500">
+                            <p>Aguardando Código QR...</p>
+                            <p className="text-xs text-gray-400 mt-2">(Verifique se o backend está rodando)</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

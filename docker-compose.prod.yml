@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=super-secret-key-change-this
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./backend/zapcar.db:/app/zapcar.db
+      - ./backend/.wwebjs_auth:/app/.wwebjs_auth
+      - ./backend/.wwebjs_cache:/app/.wwebjs_cache
+
+  frontend:
+    build: ./frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

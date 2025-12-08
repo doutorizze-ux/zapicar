@@ -1,0 +1,5 @@
+2025/12/07-11:32:55.575 4498 Creating DB C:\Users\User\Documents\zapcar\backend\.wwebjs_auth\session-store-9e5e96e0-2b10-45ae-b7ef-400ae576e9f7\Default\Local Storage\leveldb since it was missing.
+2025/12/07-11:32:55.581 4498 Reusing MANIFEST C:\Users\User\Documents\zapcar\backend\.wwebjs_auth\session-store-9e5e96e0-2b10-45ae-b7ef-400ae576e9f7\Default\Local Storage\leveldb/MANIFEST-000001
+2025/12/07-11:32:55.581 4498 Recovering log #4
+2025/12/07-11:32:55.582 4498 Reusing old log C:\Users\User\Documents\zapcar\backend\.wwebjs_auth\session-store-9e5e96e0-2b10-45ae-b7ef-400ae576e9f7\Default\Local Storage\leveldb/000004.log 
+2025/12/07-11:32:55.582 4498 Delete type=2 #5

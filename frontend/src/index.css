@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@layer utilities {
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    .perspective-1000 {
+        perspective: 1000px;
+    }
+
+    .rotate-y-12 {
+        transform: rotateY(12deg);
+    }
+
+    .rotate-z-3 {
+        transform: rotateZ(3deg);
+    }
+
+    .animate-scroll-slow {
+        animation: scroll 30s linear infinite;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}

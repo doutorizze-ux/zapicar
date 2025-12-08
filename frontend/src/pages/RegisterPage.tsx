@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Store, Mail, Lock, CheckCircle, ArrowRight, FileText } from 'lucide-react';
 import { API_URL } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 export function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ export function RegisterPage() {
         document: '' // CNPJ/CPF
     });
     const [loading, setLoading] = useState(false);
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleRegister = async (e: React.FormEvent) => {
@@ -46,7 +48,7 @@ export function RegisterPage() {
 
                 if (loginRes.ok) {
                     const data = await loginRes.json();
-                    localStorage.setItem('token', data.access_token);
+                    login(data.access_token, data.user);
                     // Redirect to PLANS instead of dashboard
                     navigate('/dashboard/plans');
                 } else {

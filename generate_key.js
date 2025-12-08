@@ -1,3 +1,0 @@
-
-const key = '$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OmU3YjI2MDNlLTVlMjgtNDBiYy1hYzI1LWUyOTlhY2I1MWM3ZTo6JGFhY2hfZjZkMjA5MTEtN2NkZC00YTM2LWI4MGYtYTgwZjAzYWZlMzUx';
-console.log(Buffer.from(key).toString('base64'));

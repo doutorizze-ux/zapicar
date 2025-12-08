@@ -1,5 +1,6 @@
 import { Plus, Search, Filter } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { API_URL } from '../config';
 import { AddVehicleModal } from '../components/AddVehicleModal';
 
 // Interfaces matching backend entity
@@ -29,7 +30,7 @@ export function VehiclesPage() {
         }
 
         try {
-            const res = await fetch('http://localhost:3000/vehicles', {
+            const res = await fetch(`${API_URL}/vehicles`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

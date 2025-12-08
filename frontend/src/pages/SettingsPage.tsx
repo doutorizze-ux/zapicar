@@ -1,4 +1,5 @@
 import { Store, CreditCard, LogOut, MessageCircle, Upload, Save, Pencil } from 'lucide-react';
+import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
 
 import { useState, useEffect, useRef } from 'react';
@@ -27,7 +28,7 @@ export function SettingsPage() {
         }
 
         try {
-            const response = await fetch('http://localhost:3000/users/profile', {
+            const response = await fetch(`${API_URL}/users/profile`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -63,7 +64,7 @@ export function SettingsPage() {
     const handleSaveProfile = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3000/users/profile', {
+            const response = await fetch(`${API_URL}/users/profile`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -96,7 +97,7 @@ export function SettingsPage() {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3000/users/logo', {
+            const response = await fetch(`${API_URL}/users/logo`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`

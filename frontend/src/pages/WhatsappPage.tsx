@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
 import { Smartphone, CheckCircle, RefreshCw } from 'lucide-react';
 import { API_URL } from '../config';
-import { API_URL } from '../config';
 
 export function WhatsappPage() {
     const [qrCode, setQrCode] = useState<string | null>(null);

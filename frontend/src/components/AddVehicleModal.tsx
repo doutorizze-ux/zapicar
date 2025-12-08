@@ -1,5 +1,6 @@
 import { X, Upload } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 
 const CAR_BRANDS = [
     'Toyota', 'Honda', 'Hyundai', 'Volkswagen', 'Chevrolet', 'Ford', 'Fiat', 'Jeep', 'Renault', 'Nissan',
@@ -87,7 +88,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
             let response;
             if (initialData) {
                 // Edit Mode
-                response = await fetch(`http://localhost:3000/vehicles/${initialData.id}`, {
+                response = await fetch(`${API_URL}/vehicles/${initialData.id}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -97,7 +98,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                 });
             } else {
                 // Create Mode
-                response = await fetch('http://localhost:3000/vehicles', {
+                response = await fetch(`${API_URL}/vehicles`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -118,7 +119,7 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                         uploadData.append('files', file);
                     });
 
-                    await fetch(`http://localhost:3000/vehicles/${vehicleId}/upload`, {
+                    await fetch(`${API_URL}/vehicles/${vehicleId}/upload`, {
                         method: 'POST',
                         body: uploadData,
                     });

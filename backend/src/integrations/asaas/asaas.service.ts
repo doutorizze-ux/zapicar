@@ -10,7 +10,23 @@ export class AsaasService {
 
     constructor(private configService: ConfigService) {
         this.apiUrl = this.configService.get<string>('ASAAS_API_URL', 'https://api-sandbox.asaas.com/v3');
-        this.apiKey = this.configService.get<string>('ASAAS_API_KEY', '');
+        let rawKey = this.configService.get<string>('ASAAS_API_KEY', '');
+
+        // Check if key is Base64 encoded (contains no special chars like $)
+        // Asaas keys start with $ usually. If it doesn't, assume Base64 and try to decode.
+        if (rawKey && !rawKey.startsWith('$') && !rawKey.startsWith('\'$') && !rawKey.startsWith('"$')) {
+            try {
+                const decoded = Buffer.from(rawKey, 'base64').toString('utf-8');
+                if (decoded.startsWith('$')) {
+                    rawKey = decoded;
+                    this.logger.log('Detected Base64 Encoded ASAAS_API_KEY. Decoded successfully.');
+                }
+            } catch (e) {
+                // Not base64 or failed, use as is
+            }
+        }
+
+        this.apiKey = rawKey;
 
         if (this.apiKey) {
             this.logger.log(`ASAAS_API_KEY loaded: ${this.apiKey.substring(0, 5)}...`);

@@ -1,5 +1,5 @@
 
-import { DollarSign, TrendingUp, CreditCard } from 'lucide-react';
+import { DollarSign, TrendingUp } from 'lucide-react';
 
 export function AdminFinancialPage() {
     return (

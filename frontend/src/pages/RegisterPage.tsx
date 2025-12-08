@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Store, Mail, Lock, CheckCircle, ArrowRight, FileText } from 'lucide-react';
+import { API_URL } from '../config';
 
 export function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -24,7 +25,7 @@ export function RegisterPage() {
 
         try {
             // 1. Register User
-            const response = await fetch('http://localhost:3000/auth/register', {
+            const response = await fetch(`${API_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -37,7 +38,7 @@ export function RegisterPage() {
 
             if (response.ok) {
                 // Auto login after register
-                const loginRes = await fetch('http://localhost:3000/auth/login', {
+                const loginRes = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: formData.email, password: formData.password }),

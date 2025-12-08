@@ -157,7 +157,8 @@ export class WhatsappService implements OnModuleInit {
                 responseText = response.text();
             } catch (error) {
                 console.error('AI Generation Error:', error);
-                responseText = 'Olá! Sou o assistente virtual. Tive um pequeno soluço técnico, mas já voltei. Você está procurando por algum carro específico? (Ex: Hilux, Civic...)';
+                const errorMsg = error instanceof Error ? error.message : String(error);
+                responseText = `Olá! Tive um problema técnico (${errorMsg}). Tente novamente mais tarde.`;
             }
         } else {
             responseText = contextVehicles.length > 0

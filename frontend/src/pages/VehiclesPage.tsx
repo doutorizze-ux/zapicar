@@ -67,6 +67,17 @@ export function VehiclesPage() {
         setEditingVehicle(null);
     };
 
+    const getImageUrl = (url?: string) => {
+        if (!url) return "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop";
+        if (url.includes('localhost:3000')) {
+            return url.replace('http://localhost:3000', API_URL).replace('https://localhost:3000', API_URL);
+        }
+        if (url.startsWith('/')) {
+            return `${API_URL}${url}`;
+        }
+        return url;
+    };
+
     return (
         <div className="space-y-8">
             <AddVehicleModal
@@ -117,7 +128,7 @@ export function VehiclesPage() {
                         <div key={vehicle.id} className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300">
                             <div className="aspect-video bg-gray-100 relative overflow-hidden">
                                 <img
-                                    src={vehicle.images?.[0] || "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop"}
+                                    src={getImageUrl(vehicle.images?.[0])}
                                     alt={vehicle.name}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />

@@ -37,7 +37,7 @@ export class VehiclesController {
         if (!vehicle.images) vehicle.images = [];
 
         files.forEach(file => {
-            const imageUrl = `http://localhost:3000/uploads/${file.filename}`;
+            const imageUrl = `/uploads/${file.filename}`;
             vehicle.images.push(imageUrl);
         });
 

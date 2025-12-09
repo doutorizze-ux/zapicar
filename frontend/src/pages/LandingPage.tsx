@@ -150,7 +150,7 @@ export function LandingPage() {
                                             <div className="w-full h-full bg-green-100 flex items-center justify-center text-xs font-bold text-green-700">Z</div>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-black text-sm truncate">ZapCar</p>
+                                            <p className="font-bold text-black text-sm truncate">Zapicar</p>
                                             <p className="text-[10px] text-gray-500">Conta comercial</p>
                                         </div>
                                     </div>

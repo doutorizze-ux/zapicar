@@ -105,6 +105,9 @@ export class WhatsappService implements OnModuleInit {
         const user = await this.usersService.findById(userId);
         const storeName = user?.storeName || "ZapCar";
 
+        // Helper to delay (prevent spam blocking)
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
         // 2. Fallback Logic Helper
         const fallbackResponse = async (): Promise<string> => {
             const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'epa', 'opa'];
@@ -116,35 +119,22 @@ export class WhatsappService implements OnModuleInit {
                 return `📍 Estamos localizados em: [Seu Endereço Aqui - Configure no Painel].\nVenha nos visitar!`;
             }
 
-            // aggressive keyword search if AI fails
-            const allVehicles = await this.vehiclesService.findAll(userId);
-            const matches = allVehicles.filter(v =>
-                msg.includes(v.name.toLowerCase()) ||
-                msg.includes(v.brand.toLowerCase()) ||
-                msg.includes(v.model.toLowerCase()) ||
-                (v.name + v.brand + v.model).toLowerCase().includes(msg)
-            ).slice(0, 5);
-
-            if (matches.length > 0) {
-                return `Encontrei essas opções para você 🚘:\n\n${matches.map(v => `🔹 *${v.brand} ${v.name}* ${v.model}\n   📅 ${v.year} | 💰 R$ ${v.price.toLocaleString('pt-BR')}`).join('\n\n')}\n\nGostou de algum? Digite *Tenho interesse*!`;
+            // aggressive keyword search
+            if (contextVehicles.length > 0) {
+                return `Encontrei essas opções para você 🚘:\n\n${contextVehicles.map(v =>
+                    `🔹 *${v.brand} ${v.name}* ${v.model}\n   📅 ${v.year} | � ${v.km}km\n   ⛽ ${v.fuel} | ⚙️ ${v.transmission}\n   �💰 *R$ ${v.price.toLocaleString('pt-BR')}*`
+                ).join('\n\n-----------------\n\n')}\n\nGostou de algum? Digite *Tenho interesse*!`;
             } else {
                 // Show 3 random featured cars
                 const featured = allVehicles.slice(0, 3);
                 if (featured.length > 0) {
-                    return `Poxa, não encontrei exatamente o que você pediu. 😕\n\nMas olha só o que acabou de chegar:\n\n${featured.map(v => `🔥 *${v.brand} ${v.name}*\n   � R$ ${v.price.toLocaleString('pt-BR')}`).join('\n\n')}\n\nDigite o nome de um desses para ver mais fotos!`;
+                    return `Poxa, não encontrei exatamente esse modelo. 😕\n\nMas olha só o que acabou de chegar:\n\n${featured.map(v =>
+                        `🔥 *${v.brand} ${v.name}*\n   📅 ${v.year} | 💰 R$ ${v.price.toLocaleString('pt-BR')}`
+                    ).join('\n\n')}\n\nDigite o nome de um desses para ver mais fotos!`;
                 }
                 return `Olá! Não encontrei esse modelo no momento. 😕\n\nTente buscar por marca (ex: *Fiat*, *Toyota*) ou digite *Estoque* para ver tudo.`;
             }
         };
-
-        // 3. Prepare Context (Aggressive Search)
-        const allVehicles = await this.vehiclesService.findAll(userId);
-        const contextVehicles = allVehicles.filter(v =>
-            msg.includes(v.name.toLowerCase()) ||
-            msg.includes(v.brand.toLowerCase()) ||
-            msg.includes(v.model.toLowerCase()) ||
-            (v.name + v.brand + v.model).toLowerCase().includes(msg)
-        ).slice(0, 5);
 
         // 4. Try FAQ Match First
         const faqMatch = await this.faqService.findMatch(userId, msg);
@@ -154,17 +144,25 @@ export class WhatsappService implements OnModuleInit {
             responseText = faqMatch;
         } else if (this.model) {
             try {
-                // contextVehicles is already calculated above
+                // Enrich context for AI
+                const params = contextVehicles.map(v =>
+                    `${v.brand} ${v.name} ${v.model} (${v.year}) - R$ ${v.price} - ${v.km}km - ${v.fuel} - ${v.transmission} - Cor: ${v.color}`
+                ).join('\n');
 
                 const prompt = `
                 Atue como vendedor sênior da loja "${storeName}". 
                 Cliente disse: "${message.body}"
                 
-                Carros Disponíveis (Filtro): ${JSON.stringify(contextVehicles.map(v => `${v.brand} ${v.name} (${v.year}) - R$ ${v.price}`))}.
+                Carros Disponíveis (Detalhes Completos):
+                ${params}
                 
-                Se não houver carros na lista acima, diga que não encontrou exato mas convide para visitar a loja.
-                Se houver, apresente-os com entusiasmo.
-                Se for apenas "Oi", seja curto e simpático: "Olá! Bem vindo à ${storeName}. O que procura hoje?"
+                Se houver carros:
+                - Apresente o carro com detalhes importantes (KM, Cambio, Preço).
+                - Use emojis.
+                - Venda o peixe! Destaque a oportunidade.
+                
+                Se não houver carros exatos na lista (apenas recomendações genéricas ou vazio):
+                - Diga que não encontrou o exato, mas convide para a loja.
                 `;
 
                 const result = await this.model.generateContent(prompt);
@@ -177,23 +175,25 @@ export class WhatsappService implements OnModuleInit {
         } else {
             responseText = await fallbackResponse();
         }
-        // 4. Reply
+
+        // 5. Reply Text
         await message.reply(responseText);
 
-        // 5. Send Images
+        // 6. Send Images (Improved)
         if (contextVehicles.length > 0) {
             const client = this.clients.get(userId);
             if (!client) return;
 
-            for (const car of contextVehicles) {
+            for (const car of contextVehicles.slice(0, 3)) { // Limit to 3 cars to avoid spam
                 if (car.images && car.images.length > 0) {
-                    // Send up to 4 images per vehicle
-                    const imagesToSend = car.images.slice(0, 4);
+                    const imagesToSend = car.images.slice(0, 4); // Max 4 images per car
+
                     for (const imageUrl of imagesToSend) {
                         try {
                             if (imageUrl && (imageUrl.startsWith('http') || imageUrl.startsWith('https'))) {
                                 const media = await MessageMedia.fromUrl(imageUrl);
-                                await client.sendMessage(message.from, media, { caption: `📸 ${car.brand} ${car.name}` });
+                                await client.sendMessage(message.from, media, { caption: `📸 ${car.brand} ${car.name} (${car.year})` });
+                                await delay(1500); // 1.5s delay between images
                             }
                         } catch (e) {
                             console.error(`Failed to send image for ${car.name}:`, e);

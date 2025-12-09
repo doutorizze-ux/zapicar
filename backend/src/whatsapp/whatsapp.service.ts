@@ -105,10 +105,19 @@ export class WhatsappService implements OnModuleInit {
         const user = await this.usersService.findById(userId);
         const storeName = user?.storeName || "ZapCar";
 
+        // 2. Prepare Context (Aggressive Search) - Moved to top for scope availability
+        const allVehicles = await this.vehiclesService.findAll(userId);
+        const contextVehicles = allVehicles.filter(v =>
+            msg.includes(v.name.toLowerCase()) ||
+            msg.includes(v.brand.toLowerCase()) ||
+            msg.includes(v.model.toLowerCase()) ||
+            (v.name + v.brand + v.model).toLowerCase().includes(msg)
+        ).slice(0, 5);
+
         // Helper to delay (prevent spam blocking)
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-        // 2. Fallback Logic Helper
+        // 3. Fallback Logic Helper
         const fallbackResponse = async (): Promise<string> => {
             const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'epa', 'opa'];
             if (greetings.some(g => msg.includes(g) && msg.length < 15)) {

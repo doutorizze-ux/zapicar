@@ -128,6 +128,11 @@ export class WhatsappService implements OnModuleInit {
                 return `📍 Estamos localizados em: [Seu Endereço Aqui - Configure no Painel].\nVenha nos visitar!`;
             }
 
+            // Handle general interest without specific car - Prompt for details
+            if (msg.includes('interesse') || msg.includes('gostei') || msg.includes('quero') || msg.includes('comprar')) {
+                return `Que ótimo! 😃 Fico feliz que tenha gostado.\n\nPara agilizar, me diga: *qual modelo* ou *ano* do carro chamou sua atenção? (Ex: "O Gol 2015" ou "O Civic")\n\nAssim consigo te ajudar melhor!`;
+            }
+
             // aggressive keyword search
             if (contextVehicles.length > 0) {
                 return `Encontrei ${contextVehicles.length} opção(ões) para você! 🚘\n\nVeja os detalhes abaixo:`;
@@ -203,7 +208,9 @@ export class WhatsappService implements OnModuleInit {
 📅 Ano: ${car.year} | 🚦 Km: ${car.km || 'N/A'}
 ⛽ Combustível: ${car.fuel} | ⚙️ Câmbio: ${car.transmission}
 🎨 Cor: ${car.color}
-💰 *R$ ${Number(car.price).toLocaleString('pt-BR')}*`;
+💰 *R$ ${Number(car.price).toLocaleString('pt-BR')}*
+
+_Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
 
                 await client.sendMessage(message.from, specs);
                 await delay(800);

@@ -119,12 +119,19 @@ export function SettingsPage() {
 
     const getImageUrl = (url?: string) => {
         if (!url) return "";
-        if (url.includes('localhost:3000')) {
-            return url.replace('http://localhost:3000', API_URL).replace('https://localhost:3000', API_URL);
+        if (url.startsWith('http')) return url;
+
+        // Em desenvolvimento local, precisamos apontar para o backend explicitamente
+        if (import.meta.env.DEV && url.startsWith('/')) {
+            return `http://localhost:3000${url}`;
         }
-        if (url.startsWith('/')) {
-            return `${API_URL}${url}`;
+
+        // Em produção, /uploads/... será servido pelo mesmo domínio (via Nginx proxy)
+        // Se a url vier como "http://localhost:3000/..." do banco legado, tentamos corrigir
+        if (url.includes('localhost:3000') && !import.meta.env.DEV) {
+            return url.replace('http://localhost:3000', '').replace('https://localhost:3000', '');
         }
+
         return url;
     };
 

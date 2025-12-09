@@ -109,22 +109,22 @@ export function DashboardLayout() {
 
             {/* Sidebar */}
             <aside className={cn(
-                "fixed inset-y-0 left-0 z-20 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
+                "fixed inset-y-0 left-0 z-20 w-64 bg-[#0B2B26] border-r border-white/5 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0",
                 isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
-                "flex flex-col pt-16 md:pt-0" // Add padding top for mobile header
+                "flex flex-col pt-16 md:pt-0"
             )}>
-                <div className="hidden md:flex p-6 border-b border-gray-100 items-center justify-start h-[88px]">
+                <div className="hidden md:flex p-6 border-b border-white/5 items-center justify-start h-[88px]">
                     {storeInfo?.name && storeInfo.name !== 'Zapicar' ? (
                         <div className="flex items-center gap-3">
                             {storeInfo.logoUrl && (
-                                <img src={storeInfo.logoUrl} alt="Store Logo" className="w-10 h-10 rounded-xl object-cover border border-gray-100" />
+                                <img src={storeInfo.logoUrl} alt="Store Logo" className="w-10 h-10 rounded-xl object-cover border border-white/10" />
                             )}
-                            <h1 className="text-lg font-bold text-gray-900 truncate max-w-[170px]" title={storeInfo.name}>
+                            <h1 className="text-lg font-bold text-white truncate max-w-[170px]" title={storeInfo.name}>
                                 {storeInfo.name}
                             </h1>
                         </div>
                     ) : (
-                        <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto" />
+                        <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto brightness-0 invert" />
                     )}
                 </div>
 
@@ -136,18 +136,18 @@ export function DashboardLayout() {
                             className={cn(
                                 "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group font-medium",
                                 location.pathname === item.path
-                                    ? "bg-green-50 text-green-600 shadow-sm"
-                                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                    ? "bg-[#25D366] text-white shadow-lg shadow-green-500/20"
+                                    : "text-gray-400 hover:bg-white/5 hover:text-white"
                             )}
                         >
-                            <item.icon className={cn("w-5 h-5", location.pathname === item.path ? "text-green-600" : "text-gray-400 group-hover:text-gray-600")} />
+                            <item.icon className={cn("w-5 h-5", location.pathname === item.path ? "text-white" : "text-gray-500 group-hover:text-green-400")} />
                             {item.label}
                         </Link>
                     ))}
                 </nav>
 
-                <div className="p-4 border-t border-gray-100">
-                    <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium">
+                <div className="p-4 border-t border-white/5">
+                    <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 w-full text-red-400 hover:bg-red-500/10 rounded-xl transition-colors font-medium">
                         <LogOut className="w-5 h-5" />
                         Sair
                     </button>

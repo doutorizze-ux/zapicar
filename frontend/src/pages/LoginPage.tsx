@@ -102,6 +102,21 @@ export function LoginPage() {
                         </div>
                     </form>
                 </div>
+
+                <div className="mt-6 flex items-center justify-between text-sm">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="text-gray-600 hover:text-green-600 font-medium transition-colors"
+                    >
+                        ← Voltar para Home
+                    </button>
+                    <button
+                        onClick={() => navigate('/register')}
+                        className="text-green-600 hover:text-green-500 font-medium transition-colors"
+                    >
+                        Não tem conta? Cadastre-se
+                    </button>
+                </div>
             </div>
         </div>
     );

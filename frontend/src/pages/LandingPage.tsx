@@ -9,7 +9,7 @@ export function LandingPage() {
         <div className="min-h-screen bg-[#0B2B26] font-sans text-white overflow-x-hidden selection:bg-green-500 selection:text-white">
 
             {/* Navbar */}
-            <nav className="fixed w-full bg-[#0B2B26]/80 backdrop-blur-md z-50 border-b border-white/5 h-20 flex items-center">
+            <nav className="fixed w-full bg-[#0B2B26] z-50 border-b border-white/5 h-20 flex items-center shadow-lg">
                 <div className="max-w-7xl mx-auto w-full px-6 flex justify-between items-center">
                     <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto brightness-0 invert" />
                     <div className="flex items-center gap-6">

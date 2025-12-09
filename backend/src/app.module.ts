@@ -14,6 +14,7 @@ import { AuthModule } from './auth/auth.module';
 import { AsaasModule } from './integrations/asaas/asaas.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FaqModule } from './faq/faq.module';
+import { LeadsModule } from './leads/leads.module';
 
 @Module({
   imports: [
@@ -43,8 +44,10 @@ import { FaqModule } from './faq/faq.module';
     WhatsappModule,
     AuthModule,
     AsaasModule,
+    AsaasModule,
     SubscriptionsModule,
     FaqModule,
+    LeadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

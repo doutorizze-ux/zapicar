@@ -355,6 +355,16 @@ export function LandingPage() {
                 </div>
             </footer>
 
-        </div>
-    );
+            {/* Floating WhatsApp Button */}
+            <a
+                href="https://wa.me/5562995347257"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-16 h-16 bg-[#25D366] rounded-full shadow-[0_0_20px_rgba(37,211,102,0.6)] hover:scale-110 transition-transform duration-300 group"
+                aria-label="Fale conosco no WhatsApp"
+            >
+                <div className="absolute inset-0 bg-[#25D366] rounded-full animate-ping opacity-40"></div>
+                <MessageCircle className="w-8 h-8 text-white relative z-10 fill-white" />
+            </a>
+            );
 }

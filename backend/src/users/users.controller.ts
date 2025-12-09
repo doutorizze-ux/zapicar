@@ -41,7 +41,11 @@ export class UsersController {
     @UseGuards(JwtAuthGuard)
     @Patch('profile')
     async updateProfile(@Request() req, @Body() body: { storeName?: string; phone?: string }) {
-        console.log('Update Profile Request for User ID:', req.user.userId);
+        console.log('--------------------------------------------------');
+        console.log('[UsersController] PATCH /profile called');
+        console.log('[UsersController] User:', req.user);
+        console.log('[UsersController] Body:', body);
+        console.log('Update Profile Request for User ID:', req.user?.userId);
 
         const updates: any = {};
         if (body.storeName !== undefined) updates.storeName = body.storeName;

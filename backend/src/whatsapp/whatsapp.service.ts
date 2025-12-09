@@ -116,80 +116,110 @@ export class WhatsappService implements OnModuleInit {
         const user = await this.usersService.findById(userId);
         const storeName = user?.storeName || "ZapCar";
 
-        // 2. Prepare Context (Aggressive Search) - Moved to top for scope availability
+        // 2. Prepare Context (Smarter Search)
         const allVehicles = await this.vehiclesService.findAll(userId);
-        const contextVehicles = allVehicles.filter(v =>
-            msg.includes(v.name.toLowerCase()) ||
-            msg.includes(v.brand.toLowerCase()) ||
-            msg.includes(v.model.toLowerCase()) ||
-            (v.name + v.brand + v.model).toLowerCase().includes(msg)
-        ).slice(0, 5);
+        let contextVehicles: any[] = [];
+
+        // Ignora mensagens muito curtas ou genéricas para busca de veículos
+        const ignoreTerms = ['bom', 'boa', 'tarde', 'noite', 'dia', 'ola', 'olá', 'tudo', 'bem', 'sim', 'não', 'quero'];
+        const isGeneric = ignoreTerms.includes(msg) || msg.length <= 3;
+
+        if (!isGeneric) {
+            contextVehicles = allVehicles.filter(v => {
+                const searchTerms = [v.name, v.brand, v.model].map(t => t?.toLowerCase() || '');
+                // Verifica palavra exata ou inclusão significativa
+                return searchTerms.some(term => term && msg.includes(term));
+            }).slice(0, 5);
+        }
 
         // Helper to delay (prevent spam blocking)
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-        // 3. Fallback Logic Helper
+        let shouldShowCars = false;
+        let responseText = '';
+
+        // 3. Fallback Logic Helper (Quando sem IA ou erro)
         const fallbackResponse = async (): Promise<string> => {
             const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'epa', 'opa'];
-            if (greetings.some(g => msg.includes(g) && msg.length < 15)) {
+
+            // Se for saudação e não achou carro específico
+            if (greetings.some(g => msg.includes(g)) && contextVehicles.length === 0) {
+                shouldShowCars = false;
                 return `Olá! 👋 Bem-vindo à *${storeName}*.\n\nSou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *Estoque* para ver nossas novidades!`;
             }
 
             if (msg.includes('endereço') || msg.includes('local') || msg.includes('onde fica')) {
-                return `📍 Estamos localizados em: [Seu Endereço Aqui - Configure no Painel].\nVenha nos visitar!`;
+                shouldShowCars = false;
+                return `📍 Estamos localizados em: [Endereço da Loja].\nVenha nos visitar!`;
             }
 
-            // Handle general interest without specific car - Prompt for details
-            if (msg.includes('interesse') || msg.includes('gostei') || msg.includes('quero') || msg.includes('comprar')) {
-                return `Que ótimo! 😃 Fico feliz que tenha gostado.\n\nPara agilizar, me diga: *qual modelo* ou *ano* do carro chamou sua atenção? (Ex: "O Gol 2015" ou "O Civic")\n\nAssim consigo te ajudar melhor!`;
-            }
-
-            // aggressive keyword search
+            // aggressive keyword search success
             if (contextVehicles.length > 0) {
-                return `Encontrei ${contextVehicles.length} opção(ões) para você! 🚘\n\nVeja os detalhes abaixo:`;
-            } else {
-                // Show 3 random featured cars
-                const featured = allVehicles.slice(0, 3);
-                if (featured.length > 0) {
-                    return `Poxa, não encontrei exatamente esse modelo. 😕\n\nMas olha só o que acabou de chegar no nosso estoque:`;
-                }
-                return `Olá! Não encontrei esse modelo no momento. 😕\n\nTente buscar por marca (ex: *Fiat*, *Toyota*) ou digite *Estoque* para ver tudo.`;
+                shouldShowCars = true;
+                return `Encontrei ${contextVehicles.length} opção(ões) que podem te interessar! 🚘\n\nVou te mandar as fotos e detalhes agora:`;
             }
+
+            // Explicit stock request
+            if (msg.includes('estoque') || msg.includes('catalogo') || msg.includes('catálogo')) {
+                contextVehicles = allVehicles.slice(0, 5); // Show first 5 mixed
+                shouldShowCars = true;
+                return `Claro! Aqui estão alguns destaques do nosso estoque atual:`;
+            }
+
+            shouldShowCars = false;
+            return `Desculpe, não entendi bem. 😕\n\nPor favor, diga o **nome do carro** que procura (ex: *Gol*, *Corolla*) ou digite *Estoque* para ver tudo.`;
         };
 
         // 4. Try FAQ Match First
         const faqMatch = await this.faqService.findMatch(userId, msg);
-        let responseText = '';
 
         if (faqMatch) {
             responseText = faqMatch;
+            shouldShowCars = false;
         } else if (this.model) {
             try {
                 // Enrich context for AI
                 const params = contextVehicles.map(v =>
-                    `${v.brand} ${v.name} ${v.model} (${v.year})`
+                    `- ${v.brand} ${v.name} ${v.model} (${v.year})`
                 ).join('\n');
 
                 const prompt = `
-                Atue como vendedor sênior da loja "${storeName}". 
-                Cliente disse: "${message.body}"
+                Você é um vendedor experiente e simpático da loja "${storeName}".
                 
-                Eu tenho esses carros em estoque que correspondem à busca (resumo):
+                Mensagem do Cliente: "${message.body}"
+                
+                Veículos em estoque que correspondem à mensagem (pode estar vazio):
                 ${params}
                 
-                Se houver veículos listados acima:
-                - Responda ao cliente criando expectativa e convidando para ver as fotos abaixo.
-                - NÃO dite os preços ou fichas técnicas na mensagem de texto, pois o sistema enviará fichas individuais logo em seguida.
-                - Se o cliente fez uma pergunta específica (ex: "tem teto solar?"), você pode responder se souber, mas foque em apresentar os carros.
+                Seu objetivo é:
+                1. Analisar a intenção do cliente.
+                2. Responder de forma natural e engajadora.
                 
-                Se a lista estiver vazia:
-                - Diga que não encontrou o exato, mas mostre os destaques (se houver, o sistema enviará).
-                - Seja simpático e use emojis.
+                Regras de Resposta:
+                - Se o cliente apenas cumprimentou (Oi, Olá), responda cordialmente e pergunte o que ele busca. NÃO invente ofertas.
+                - Se o cliente pediu um carro e ele ESTÁ na lista acima, diga que temos e que vai mostrar os detalhes.
+                - Se o cliente pediu um carro e ele NÃO está na lista, diga que infelizmente não tem esse modelo exato no momento, mas pergunte se ele aceita ver outras opções.
+                - Se o cliente perguntou endereço/telefone, responda se souber (ou diga pra consultar a bio).
+                
+                CONTROLE DE FLUXO (Crucial):
+                No FINAL da sua resposta, adicione uma destas flags (invisíveis para o usuário final, eu vou remover depois):
+                [SHOW_CARS] -> Use APENAS se você confirmou que temos o carro que o cliente pediu e vai mostrá-lo, ou se o cliente pediu para ver o estoque.
+                [NO_CARS] -> Use em todos os outros casos (saudações, perguntas gerais, carro indisponível).
                 `;
 
                 const result = await this.model.generateContent(prompt);
-                const response = await result.response;
-                responseText = response.text();
+                const aiResponse = result.response.text();
+
+                // Parse AI decision
+                if (aiResponse.includes('[SHOW_CARS]')) {
+                    shouldShowCars = true;
+                } else {
+                    shouldShowCars = false;
+                }
+
+                // Remove flags from text sent to user
+                responseText = aiResponse.replace(/\[SHOW_CARS\]|\[NO_CARS\]/g, '').trim();
+
             } catch (error) {
                 console.error('AI Failed, using fallback strategy', error);
                 responseText = await fallbackResponse();
@@ -198,22 +228,22 @@ export class WhatsappService implements OnModuleInit {
             responseText = await fallbackResponse();
         }
 
-        // 5. Reply with Intro
+        // 5. Reply with Text
         await message.reply(responseText);
 
-        // 6. Send Cars (Card + Images) Sequentially
+        // 6. Send Cars (Card + Images) Only if decided
         const client = this.clients.get(userId);
-        if (!client) return;
+        if (!client || !shouldShowCars) return; // Stop here if no cars to show
 
-        // Determine which vehicles to show
+        // If AI said SHOW_CARS but context is empty (maybe user asked for generic 'estoque'), fill with featured
         let vehiclesToShow = contextVehicles;
-        // If no match but we have featured (fallback logic for empty search)
-        if (vehiclesToShow.length === 0 && !responseText.includes('Não encontrei') && responseText.includes('acabou de chegar')) {
+        if (vehiclesToShow.length === 0) {
+            // Pick rand or top 3 if context was empty but we want to show cars (e.g. asked for Stock)
             vehiclesToShow = allVehicles.slice(0, 3);
         }
 
         if (vehiclesToShow.length > 0) {
-            for (const car of vehiclesToShow.slice(0, 5)) { // Limit to 5 cars
+            for (const car of vehiclesToShow.slice(0, 5)) {
                 // A. Send Specs Text
                 const specs = `🔹 *${car.brand} ${car.name}* ${car.model || ''}
 📅 Ano: ${car.year} | 🚦 Km: ${car.km || 'N/A'}
@@ -228,21 +258,19 @@ _Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
 
                 // B. Send Images
                 if (car.images && car.images.length > 0) {
-                    const imagesToSend = car.images.slice(0, 4); // Max 4 images per car
+                    const imagesToSend = car.images.slice(0, 4);
 
                     for (const imageUrl of imagesToSend) {
                         try {
                             if (!imageUrl) continue;
 
                             let finalUrl = imageUrl;
-                            // If relative path, prepend localhost (Docker container internal access)
                             if (imageUrl.startsWith('/')) {
                                 const port = process.env.PORT || 3000;
                                 finalUrl = `http://localhost:${port}${imageUrl}`;
                             }
 
                             if (finalUrl.startsWith('http')) {
-                                console.log(`Sending image: ${finalUrl}`);
                                 const media = await MessageMedia.fromUrl(finalUrl);
                                 await client.sendMessage(message.from, media);
                                 await delay(1000);
@@ -253,7 +281,7 @@ _Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
                     }
                 }
 
-                await delay(1500); // Delay between vehicles
+                await delay(1500);
                 await client.sendMessage(message.from, '--------------------------------');
                 await delay(500);
             }

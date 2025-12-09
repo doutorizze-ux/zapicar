@@ -135,18 +135,20 @@ export class WhatsappService implements OnModuleInit {
             }
         };
 
-        // 3. Try AI Generation
+        // 3. Prepare Context (Aggressive Search)
+        const allVehicles = await this.vehiclesService.findAll(userId);
+        const contextVehicles = allVehicles.filter(v =>
+            msg.includes(v.name.toLowerCase()) ||
+            msg.includes(v.brand.toLowerCase()) ||
+            msg.includes(v.model.toLowerCase()) ||
+            (v.name + v.brand + v.model).toLowerCase().includes(msg)
+        ).slice(0, 5);
+
+        // 4. Try AI Generation
         let responseText = '';
         if (this.model) {
             try {
-                // Fetch relevant vehicles first for AI context
-                // ... (Use same aggressive filtering as fallback to give AI good context)
-                const allVehicles = await this.vehiclesService.findAll(userId);
-                const contextVehicles = allVehicles.filter(v =>
-                    msg.includes(v.name.toLowerCase()) ||
-                    msg.includes(v.brand.toLowerCase()) ||
-                    msg.includes(v.model.toLowerCase())
-                ).slice(0, 5);
+                // contextVehicles is already calculated above
 
                 const prompt = `
                 Atue como vendedor sênior da loja "${storeName}". 

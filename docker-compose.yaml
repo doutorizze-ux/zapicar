@@ -18,6 +18,8 @@ services:
       # JWT Secret
       JWT_SECRET: ${JWT_SECRET:-secretKey}
       PORT: 3000
+      ports:
+      - "3000:3000"
     volumes:
       # Persist SQLite Database
       - zapcar_data:/app/data

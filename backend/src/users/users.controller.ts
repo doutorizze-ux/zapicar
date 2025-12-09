@@ -13,19 +13,7 @@ import { UserRole } from './entities/user.entity';
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @Get()
-    async findAll() {
-        return this.usersService.findAll();
-    }
-
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
-    @Patch(':id')
-    async updateUser(@Param('id') id: string, @Body() body: any) {
-        return this.usersService.updateById(id, body);
-    }
+    // --- Rotas de Perfil (UserLogado) - Devem vir antes de :id ---
 
     @UseGuards(JwtAuthGuard)
     @Get('profile')
@@ -44,15 +32,12 @@ export class UsersController {
         console.log('--------------------------------------------------');
         console.log('[UsersController] PATCH /profile called');
         console.log('[UsersController] User:', req.user);
-        console.log('[UsersController] Body:', body);
-        console.log('Update Profile Request for User ID:', req.user?.userId);
 
         const updates: any = {};
         if (body.storeName !== undefined) updates.storeName = body.storeName;
         if (body.phone !== undefined) updates.phone = body.phone;
 
-        const result = await this.usersService.updateById(req.user.userId, updates);
-        return result;
+        return this.usersService.updateById(req.user.userId, updates);
     }
 
     @UseGuards(JwtAuthGuard)
@@ -70,5 +55,21 @@ export class UsersController {
         if (!file) throw new Error('File not found');
         const logoUrl = `/uploads/${file.filename}`;
         return this.usersService.updateById(req.user.userId, { logoUrl });
+    }
+
+    // --- Rotas de Admin (Genéricas ou Parametrizadas) ---
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @Get()
+    async findAll() {
+        return this.usersService.findAll();
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @Patch(':id')
+    async updateUser(@Param('id') id: string, @Body() body: any) {
+        return this.usersService.updateById(id, body);
     }
 }

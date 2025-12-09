@@ -17,7 +17,42 @@ export function LiveChatPage() {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isConnected, setIsConnected] = useState(false);
-    const [botPaused, setBotPaused] = useState(false); // Mock state for now
+    const [botPaused, setBotPaused] = useState(false);
+    const [inputMessage, setInputMessage] = useState('');
+
+    // We need to know who we are chatting with. For now, let's assume the last active chat or add a selector.
+    // Since this is a "Live Feed", replying to the last message might be tricky if multiple people talk.
+    // For V1, let's assume we reply to the LAST received message's cleanup sender.
+    // IMPROVEMENT: Select a chat from a sidebar. For now, let's just grab the last 'from' that is NOT 'me' or 'bot'.
+    const lastCustomer = messages.slice().reverse().find(m => !m.isBot && m.from !== 'me')?.from;
+
+    const handleSendMessage = async () => {
+        if (!inputMessage.trim() || !lastCustomer) return;
+
+        const msgToSend = inputMessage;
+        setInputMessage(''); // Optimistic clear
+
+        try {
+            const token = localStorage.getItem('token');
+            // We need to extract the raw phone number from '5511999999999@c.us' or just pass it as is
+            // Backend handles @c.us check
+            await fetch(`${API_URL}/whatsapp/send`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    to: lastCustomer,
+                    message: msgToSend
+                })
+            });
+            // Message will appear via socket 'me' event
+        } catch (e) {
+            console.error('Failed to send message', e);
+            setInputMessage(msgToSend); // Restore on fail
+        }
+    };
 
     // Auto-scroll to bottom
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -188,23 +223,35 @@ export function LiveChatPage() {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Area (Manual Takeover - Placeholder for now) */}
-                <div className="p-4 border-t bg-white">
+                {/* Input Area */}
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSendMessage();
+                    }}
+                    className="p-4 border-t bg-white"
+                >
                     <div className="flex items-center gap-2 relative">
                         <input
                             type="text"
-                            placeholder="Intervir na conversa (Em breve)..."
-                            disabled
-                            className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-not-allowed"
+                            value={inputMessage}
+                            onChange={(e) => setInputMessage(e.target.value)}
+                            placeholder="Digite sua resposta..."
+                            disabled={!isConnected}
+                            className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50"
                         />
-                        <button disabled className="absolute right-2 p-2 text-gray-400">
+                        <button
+                            type="submit"
+                            disabled={!inputMessage.trim() || !isConnected}
+                            className="absolute right-2 p-2 text-blue-600 hover:bg-blue-50 rounded-lg disabled:text-gray-400 disabled:hover:bg-transparent transition-colors"
+                        >
                             <Send className="w-5 h-5" />
                         </button>
                     </div>
                     <p className="text-xs text-gray-400 mt-2 text-center">
-                        * O recurso de parar o bot e enviar mensagens manualmente será ativado na próxima atualização.
+                        * Ao responder, o bot é pausado automaticamente para este cliente (Implementação futura de pausa automática individual).
                     </p>
-                </div>
+                </form>
             </div>
         </div>
     );

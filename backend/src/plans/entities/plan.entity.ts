@@ -22,6 +22,10 @@ export class Plan {
     @Column('decimal', { precision: 10, scale: 2 })
     price: number;
 
+    @Column({ nullable: true, default: 10 })
+    vehicleLimit: number; // Max vehicles allowed, null/0 could mean unlimited if preferred, but explicit number is safer. Using null for unlimited logic is common.
+
+
     @Column({
         type: 'simple-enum',
         enum: PlanInterval,

@@ -34,15 +34,40 @@ export function SettingsPage() {
                 }
             });
 
+            let subInfo = 'Sem Plano';
+            let nextBilling = '-';
+            let subStatus = 'unknown';
+
             if (response.ok) {
                 const data = await response.json();
+
+                // Fetch Subscription Details
+                if (data.subscriptionId) {
+                    try {
+                        const subRes = await fetch(`${API_URL}/subscriptions/my-subscription`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const subData = await subRes.json();
+                        subInfo = subData.planName || (subData.status === 'ACTIVE' ? 'Plano Ativo' : 'Plano Pendente');
+                        subStatus = subData.latestPaymentStatus === 'RECEIVED' || subData.latestPaymentStatus === 'CONFIRMED' || subData.status === 'ACTIVE' ? 'ACTIVE' : subData.status;
+
+                        if (subData.nextDueDate) {
+                            nextBilling = new Date(subData.nextDueDate).toLocaleDateString('pt-BR');
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch subscription', e);
+                    }
+                }
+
                 setUser({
                     name: data.storeName || 'Minha Loja',
                     email: data.email,
                     phone: data.phone || '',
-                    plan: 'Plano Beta (Ilimitado)',
-                    logoUrl: data.logoUrl
-                });
+                    plan: subInfo,
+                    logoUrl: data.logoUrl,
+                    status: subStatus,
+                    nextBilling: nextBilling
+                } as any);
                 setEditForm({ name: data.storeName || 'Minha Loja', phone: data.phone || '' });
             } else {
                 if (response.status === 401) navigate('/login');
@@ -242,15 +267,17 @@ export function SettingsPage() {
                             <p className="text-sm text-gray-500">Detalhes do seu plano atual</p>
                         </div>
                     </div>
-                    <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-bold rounded-full">Ativo</span>
+                    <span className={`px-3 py-1 text-sm font-bold rounded-full ${(user as any).status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                        {(user as any).status === 'ACTIVE' ? 'Ativo' : 'Pendente / Inativo'}
+                    </span>
                 </div>
                 <div className="p-6">
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                         <div>
                             <p className="font-bold text-gray-900">{user.plan}</p>
-                            <p className="text-sm text-gray-500">Próxima renovação em 05/01/2026</p>
+                            <p className="text-sm text-gray-500">Próxima renovação em {(user as any).nextBilling || '-'}</p>
                         </div>
-                        <button className="text-blue-600 font-medium hover:underline text-sm">Gerenciar Plano</button>
+                        <button onClick={() => navigate('/dashboard/plans')} className="text-blue-600 font-medium hover:underline text-sm">Gerenciar Plano</button>
                     </div>
                 </div>
             </div>

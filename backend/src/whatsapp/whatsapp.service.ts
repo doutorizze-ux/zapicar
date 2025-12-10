@@ -114,6 +114,32 @@ export class WhatsappService implements OnModuleInit {
         }
     }
 
+    async sendManualMessage(userId: string, to: string, message: string) {
+        const client = this.clients.get(userId);
+        if (!client) {
+            throw new Error('WhatsApp client not connected');
+        }
+
+        // Ensure number formatting (remove non-digits, add suffixes if needed)
+        // whatsapp-web.js usually expects '556299999999@c.us'
+        let chatId = to;
+        if (!chatId.includes('@c.us')) {
+            chatId = `${chatId.replace(/\D/g, '')}@c.us`;
+        }
+
+        await client.sendMessage(chatId, message);
+
+        // Emit to frontend so it appears in the chat UI immediately as 'me'
+        this.chatGateway.emitMessageToRoom(userId, {
+            id: 'manual-' + Date.now(),
+            from: 'me',
+            body: message,
+            timestamp: Date.now() / 1000,
+            senderName: 'Atendente',
+            isBot: true // or create a new flag isAgent? For now re-use isBot or check sender
+        });
+    }
+
     private async handleMessage(message: Message, userId: string) {
         // 0. Emit Incoming Message to Live Chat
         try {

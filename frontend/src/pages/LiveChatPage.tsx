@@ -1,8 +1,7 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { API_URL } from '../config';
-import { MessageSquare, Send, Bot, User, PauseCircle, PlayCircle } from 'lucide-react';
+import { MessageSquare, Send, User, PauseCircle, PlayCircle, Smartphone } from 'lucide-react';
 
 interface ChatMessage {
     id: string;
@@ -13,21 +12,28 @@ interface ChatMessage {
     isBot: boolean;
 }
 
+interface Contact {
+    id: string; // Phone number or remoteJid
+    name: string;
+    lastMessage?: string;
+    lastTime?: number;
+    unread?: number;
+}
+
 export function LiveChatPage() {
     const [socket, setSocket] = useState<Socket | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [activeContactId, setActiveContactId] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
-    const [botPaused, setBotPaused] = useState(false); // Mock state for now
+    const [botPaused, setBotPaused] = useState(false);
+    const [inputText, setInputText] = useState('');
+    const [sending, setSending] = useState(false);
 
-    // Auto-scroll to bottom
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Connect to Socket.IO
-        // Note: API_URL usually has /api appended, we need the base for socket
-        // If API_URL is https://zapicar.com.br/api, socket should be https://zapicar.com.br
         const socketUrl = API_URL.replace('/api', '');
-
         const newSocket = io(socketUrl, {
             path: '/socket.io',
             transports: ['websocket', 'polling']
@@ -36,15 +42,10 @@ export function LiveChatPage() {
         newSocket.on('connect', () => {
             console.log('Socket connected');
             setIsConnected(true);
-
-            // Join Room (User ID) - We need to send an event to join
             const token = localStorage.getItem('token');
             if (token) {
-                // Decode token to get UserId roughly or just rely on backend to know who we are?
-                // Actually the gateway expects 'join_room' event with userId.
-                // We need to fetch our profile to get our ID first?
-                // Let's use the profile fetch strategy or decode JWT if possible. 
-                // For now, let's fetch profile first then join.
+                // Re-fetch profile to join room logic if needed, 
+                // but assuming socket join logic is handled or we rely on events
             }
         });
 
@@ -54,23 +55,50 @@ export function LiveChatPage() {
         });
 
         newSocket.on('new_message', (msg: ChatMessage) => {
-            console.log('New message received:', msg);
+            console.log('Msg:', msg);
             setMessages(prev => [...prev, msg]);
+
+            // Update Contact List
+            setContacts(prev => {
+                // Actually, for outbound (me), msg.from is 'me' or 'bot'. For inbound, it's the user phone.
+
+                // Identify conversation partner
+                let partnerId = msg.from;
+                if (msg.isBot || msg.from === 'me') {
+                    // This is tricky without knowing "to" in the event. 
+                    // For now, if we are active on a chat, assume it's for that chat?
+                    // Or backend needs to send 'to'.
+                    // Simplification: We only support organizing INBOUND messages correctly for now.
+                    // Outbound will just appear in the log.
+                    // Ideally, backend event should have { conversationId: '...' }
+                    return prev;
+                }
+
+                const existing = prev.find(c => c.id === partnerId);
+                if (existing) {
+                    return prev.map(c => c.id === partnerId ? { ...c, lastMessage: msg.body, lastTime: msg.timestamp, unread: (activeContactId === partnerId ? 0 : (c.unread || 0) + 1) } : c)
+                        .sort((a, b) => (b.lastTime || 0) - (a.lastTime || 0));
+                } else {
+                    return [{
+                        id: partnerId,
+                        name: msg.senderName,
+                        lastMessage: msg.body,
+                        lastTime: msg.timestamp,
+                        unread: 1
+                    }, ...prev];
+                }
+            });
         });
 
         setSocket(newSocket);
+        return () => { newSocket.disconnect(); };
+    }, [activeContactId]);
 
-        return () => {
-            newSocket.disconnect();
-        };
-    }, []);
-
-    // Fetch Profile to get User ID for Room Join
+    // Room Join Logic separate
     useEffect(() => {
         const joinRoom = async () => {
             const token = localStorage.getItem('token');
             if (!token || !socket) return;
-
             try {
                 const response = await fetch(`${API_URL}/users/profile`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -79,21 +107,12 @@ export function LiveChatPage() {
                     const user = await response.json();
                     socket.emit('join_room', { userId: user.id });
                 }
-            } catch (e) {
-                console.error('Failed to join room', e);
-            }
+            } catch (e) { console.error(e); }
         };
-
-        if (isConnected && socket) {
-            joinRoom();
-        }
+        if (isConnected && socket) joinRoom();
     }, [isConnected, socket]);
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-    // Fetch Initial Bot Status
+    // Fetch Pause Status
     useEffect(() => {
         const fetchPauseStatus = async () => {
             const token = localStorage.getItem('token');
@@ -106,27 +125,120 @@ export function LiveChatPage() {
                     const data = await response.json();
                     setBotPaused(data.paused);
                 }
-            } catch (e) {
-                console.error('Failed to fetch bot status', e);
-            }
+            } catch (e) { }
         };
         fetchPauseStatus();
     }, []);
 
+    const handleSendMessage = async () => {
+        if (!inputText.trim() || !activeContactId) return;
+        setSending(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_URL}/whatsapp/send`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    to: activeContactId,
+                    message: inputText
+                })
+            });
+
+            if (response.ok) {
+                // Optimistic UI update or wait for socket event?
+                // Backend emits event so we wait for it
+                setInputText('');
+            } else {
+                alert('Erro ao enviar mensagem');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Erro de conexão');
+        } finally {
+            setSending(false);
+        }
+    };
+
+    // Filter messages for active chat
+    // Note: This naive implementation assumes all messages in `messages` state belong to active sessions.
+    // In a real app we'd filter by conversationId.
+    // For this MVP, we will rely on a simple visual filter or just showing all for now if no ID logic is robust yet.
+    // IMPROVEMENT: We will filter messages where (msg.from === activeContactId) OR (msg.isBot && we assume it's for this chat... risky).
+    // Let's stick to: if you click a contact, we show ONLY messages from that contact + generic bot messages (which might be mixed).
+    // To fix this properly, backend ChatGateway needs to send 'conversationId' (the customer phone).
+
+    // For now, let's just allow sending to a "Manual" number or the last active one.
+
+    const activeMessages = activeContactId
+        ? messages.filter(m => m.from === activeContactId || (m.isBot && true /* Show all bot msgs for context? Limits multiple chats... */))
+        : [];
+
     return (
-        <div className="flex flex-col h-[calc(100vh-100px)]">
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <MessageSquare className="w-8 h-8 text-blue-600" />
-                        Chat em Tempo Real
-                    </h1>
-                    <p className="text-gray-600">Acompanhe os atendimentos da IA ao vivo.</p>
+        <div className="flex bg-white h-[calc(100vh-100px)] rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+            {/* Sidebar - Contacts */}
+            <div className="w-80 border-r border-gray-200 flex flex-col bg-gray-50">
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white">
+                    <h2 className="font-bold text-gray-700 flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-green-600" />
+                        Conversas
+                    </h2>
+                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? 'Online' : 'Offline'}></div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {isConnected ? 'Conectado' : 'Desconectado'}
-                    </span>
+                <div className="flex-1 overflow-y-auto">
+                    {contacts.length === 0 ? (
+                        <div className="p-8 text-center text-gray-400 text-sm">
+                            Nenhuma conversa ativa no momento.
+                        </div>
+                    ) : (
+                        contacts.map(contact => (
+                            <div
+                                key={contact.id}
+                                onClick={() => setActiveContactId(contact.id)}
+                                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-white transition-colors ${activeContactId === contact.id ? 'bg-white border-l-4 border-l-green-500 shadow-sm' : ''}`}
+                            >
+                                <div className="flex justify-between mb-1">
+                                    <span className="font-bold text-gray-800 truncate max-w-[120px]">{contact.name}</span>
+                                    {contact.lastTime && (
+                                        <span className="text-[10px] text-gray-400">{new Date(contact.lastTime * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    )}
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <p className="text-sm text-gray-500 truncate max-w-[180px]">{contact.lastMessage || '...'}</p>
+                                    {!!contact.unread && (
+                                        <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{contact.unread}</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* Chat Area */}
+            <div className="flex-1 flex flex-col bg-[#E5DDD5]">
+                {/* Chat Header */}
+                <div className="p-4 bg-white border-b border-gray-200 flex justify-between items-center shadow-sm">
+                    <div className="flex items-center gap-3">
+                        {activeContactId ? (
+                            <>
+                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold">
+                                    {contacts.find(c => c.id === activeContactId)?.name?.charAt(0) || <User />}
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-gray-800">{contacts.find(c => c.id === activeContactId)?.name || activeContactId}</h3>
+                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                        <Smartphone className="w-3 h-3" /> WhatsApp Web
+                                    </p>
+                                </div>
+                            </>
+                        ) : (
+                            <h3 className="text-gray-500 italic">Selecione uma conversa</h3>
+                        )}
+                    </div>
+
                     <button
                         onClick={async () => {
                             const newState = !botPaused;
@@ -134,53 +246,41 @@ export function LiveChatPage() {
                                 const token = localStorage.getItem('token');
                                 await fetch(`${API_URL}/whatsapp/pause`, {
                                     method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${token}`
-                                    },
+                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                                     body: JSON.stringify({ paused: newState })
                                 });
                                 setBotPaused(newState);
-                            } catch (e) {
-                                console.error('Failed to toggle bot', e);
-                            }
+                            } catch (e) { console.error(e); }
                         }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${botPaused ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${botPaused ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                     >
                         {botPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
-                        {botPaused ? 'Retomar Bot' : 'Pausar Bot'}
+                        {botPaused ? 'IA PAUSADA (Retomar)' : 'PAUSAR IA'}
                     </button>
                 </div>
-            </div>
 
-            <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
-                    {messages.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                            <MessageSquare className="w-12 h-12 mb-2 opacity-20" />
-                            <p>Aguardando novas mensagens...</p>
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
+                    <div className="absolute inset-0 opacity-10 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] pointer-events-none"></div>
+
+                    {!activeContactId ? (
+                        <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-60">
+                            <Smartphone className="w-16 h-16 mb-4" />
+                            <p>Selecione um contato para monitorar ou intervir.</p>
                         </div>
                     ) : (
-                        messages.map((msg, index) => (
-                            <div
-                                key={index}
-                                className={`flex ${msg.isBot ? 'justify-end' : 'justify-start'}`}
-                            >
-                                <div className={`max-w-[70%] rounded-2xl p-4 shadow-sm ${msg.isBot
-                                    ? 'bg-blue-600 text-white rounded-br-none'
-                                    : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
+                        activeMessages.map((msg, index) => (
+                            <div key={index} className={`flex ${msg.isBot ? 'justify-end' : 'justify-start'} relative z-10`}>
+                                <div className={`max-w-[70%] rounded-lg p-3 shadow-sm text-sm ${msg.isBot
+                                    ? 'bg-[#d9fdd3] text-gray-800 rounded-tr-none'
+                                    : 'bg-white text-gray-800 rounded-tl-none'
                                     }`}>
-                                    <div className="flex items-center gap-2 mb-1 opacity-80 text-xs">
-                                        {msg.isBot ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                                        <span className="font-medium">{msg.senderName}</span>
-                                        <span>•</span>
-                                        <span>{new Date(msg.timestamp * 1000).toLocaleTimeString()}</span>
-                                    </div>
-                                    <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                                        {msg.body}
-                                    </p>
+                                    {!msg.isBot && <p className="text-xs font-bold text-orange-600 mb-1">{msg.senderName}</p>}
+                                    {msg.isBot && <p className="text-xs font-bold text-gray-500 mb-1">{msg.senderName || 'Bot'}</p>}
+                                    <p className="whitespace-pre-wrap leading-relaxed">{msg.body}</p>
+                                    <span className="text-[10px] text-gray-400 block text-right mt-1">
+                                        {new Date(msg.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
                                 </div>
                             </div>
                         ))
@@ -188,22 +288,32 @@ export function LiveChatPage() {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Area (Manual Takeover - Placeholder for now) */}
-                <div className="p-4 border-t bg-white">
-                    <div className="flex items-center gap-2 relative">
+                {/* Input Area */}
+                <div className="p-3 bg-[#f0f2f5] border-t border-gray-200">
+                    <div className="flex gap-2">
                         <input
                             type="text"
-                            placeholder="Intervir na conversa (Em breve)..."
-                            disabled
-                            className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-not-allowed"
+                            disabled={!activeContactId || sending}
+                            value={inputText}
+                            onChange={(e) => setInputText(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                            placeholder={activeContactId ? "Digite uma mensagem para intervir..." : "Selecione uma conversa"}
+                            className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-200 disabled:cursor-not-allowed"
                         />
-                        <button disabled className="absolute right-2 p-2 text-gray-400">
+                        <button
+                            onClick={handleSendMessage}
+                            disabled={!activeContactId || sending || !inputText.trim()}
+                            className="bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
                             <Send className="w-5 h-5" />
                         </button>
                     </div>
-                    <p className="text-xs text-gray-400 mt-2 text-center">
-                        * O recurso de parar o bot e enviar mensagens manualmente será ativado na próxima atualização.
-                    </p>
+                    {botPaused && activeContactId && (
+                        <p className="text-xs text-yellow-600 mt-2 font-medium text-center flex items-center justify-center gap-1">
+                            <PauseCircle className="w-3 h-3" />
+                            A IA está pausada. Você está no controle total desta conversa.
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

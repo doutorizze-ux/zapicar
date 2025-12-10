@@ -43,10 +43,20 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
             };
 
             if (billingType === 'CREDIT_CARD') {
-                payload.creditCard = cardData;
+                // Ensure 4 digit year
+                const year = cardData.expiryYear.length === 2 ? `20${cardData.expiryYear}` : cardData.expiryYear;
+                payload.creditCard = {
+                    ...cardData,
+                    expiryYear: year
+                };
             }
-            // Always send holder info as it contains CPF/CNPJ which might be needed for user update
-            payload.creditCardHolderInfo = holderInfo;
+            // Always send holder info cleaner
+            payload.creditCardHolderInfo = {
+                ...holderInfo,
+                cpfCnpj: holderInfo.cpfCnpj.replace(/\D/g, ''),
+                postalCode: holderInfo.postalCode.replace(/\D/g, ''),
+                phone: holderInfo.phone.replace(/\D/g, '')
+            };
 
             const response = await fetch(`${import.meta.env.VITE_API_URL}/subscriptions`, {
                 method: 'POST',

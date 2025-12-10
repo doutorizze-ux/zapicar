@@ -9,18 +9,21 @@ export function LandingPage() {
         <div className="min-h-screen bg-[#0B2B26] font-sans text-white overflow-x-hidden selection:bg-green-500 selection:text-white">
 
             {/* Navbar */}
-            <nav className="fixed w-full bg-[#1F2937] z-50 border-b border-white/5 h-20 flex items-center shadow-lg">
+            {/* Navbar */}
+            <nav className="fixed w-full bg-gradient-to-r from-[#051815] to-[#0B2B26] z-50 border-b border-white/5 h-20 flex items-center shadow-lg backdrop-blur-md bg-opacity-90">
                 <div className="max-w-7xl mx-auto w-full px-6 flex justify-between items-center">
-                    <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto brightness-0 invert" />
+                    {/* Logo - Force original colors (no filters) to show the green dot */}
+                    <img src="/logo-z-green.png" alt="Zapicar" className="h-12 w-auto object-contain" />
+
                     <div className="flex items-center gap-6">
-                        <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
-                            Acessar Painel
+                        <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-300 hover:text-white transition-colors border border-transparent hover:border-white/10 px-4 py-2 rounded-full">
+                            Entrar
                         </button>
                         <button
                             onClick={() => navigate('/register')}
-                            className="hidden md:flex bg-[#25D366] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-green-500 transition-all hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] transform hover:-translate-y-0.5"
+                            className="hidden md:flex bg-white text-[#0B2B26] px-6 py-2.5 rounded-full text-sm font-bold hover:bg-gray-100 transition-all hover:scale-105 shadow-lg"
                         >
-                            Teste 7 Dias Grátis
+                            Experimente grátis
                         </button>
                     </div>
                 </div>

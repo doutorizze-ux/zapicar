@@ -44,7 +44,7 @@ export function DashboardLayout() {
                                 status = subData.status;
 
                                 // Stricter check: If payment is not confirmed, treat as PENDING even if subscription is ACTIVE
-                                const isPaid = subData.latestPaymentStatus === 'RECEIVED' || subData.latestPaymentStatus === 'CONFIRMED';
+                                const isPaid = subData.latestPaymentStatus === 'RECEIVED' || subData.latestPaymentStatus === 'CONFIRMED' || subData.latestPaymentStatus === 'COMPLETED';
                                 if (!isPaid) {
                                     status = 'PENDING';
                                 } else {
@@ -79,7 +79,7 @@ export function DashboardLayout() {
     useEffect(() => {
         if (!loading && storeInfo) {
             const isPlansPage = location.pathname === '/dashboard/plans';
-            if ((!storeInfo.subscriptionId || (storeInfo.subscriptionStatus !== 'ACTIVE' && storeInfo.subscriptionStatus !== 'RECEIVED' && storeInfo.subscriptionStatus !== 'CONFIRMED')) && !isPlansPage) {
+            if ((!storeInfo.subscriptionId || (storeInfo.subscriptionStatus !== 'ACTIVE' && storeInfo.subscriptionStatus !== 'RECEIVED' && storeInfo.subscriptionStatus !== 'CONFIRMED' && storeInfo.subscriptionStatus !== 'COMPLETED')) && !isPlansPage) {
                 navigate('/dashboard/plans');
             }
         }

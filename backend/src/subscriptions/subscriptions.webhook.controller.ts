@@ -1,5 +1,5 @@
 
-import { Controller, Post, Body, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Logger, HttpCode } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 
 @Controller('webhook')
@@ -9,6 +9,7 @@ export class SubscriptionsWebhookController {
     constructor(private readonly subscriptionsService: SubscriptionsService) { }
 
     @Post('asaas')
+    @HttpCode(200)
     async handleAsaasWebhook(@Body() body: any) {
         this.logger.log(`Webhook Asaas recebido: ${body.event}`);
 

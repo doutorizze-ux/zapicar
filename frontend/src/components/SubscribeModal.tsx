@@ -95,20 +95,25 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
             const data = await response.json();
 
             if (response.ok) {
-                if (data.paymentUrl) {
+                // Se for PIX e tiver QR Code, mostra no modal (Prioridade)
+                if (billingType === 'PIX' && (data.pixQrCode || data.pixCode)) {
+                    setPixCode(data.pixQrCode?.payload || data.pixCode);
+                    setPixImage(data.pixQrCode?.encodedImage);
+                    setStep(3);
+                    return;
+                }
+
+                // Se não for PIX (ou falhar QR Code), mas tiver URL, redireciona (ex: Boleto)
+                if (data.paymentUrl && billingType !== 'CREDIT_CARD') {
                     window.location.href = data.paymentUrl;
                     return;
                 }
 
-                if (billingType === 'PIX' && data.pixQrCode) {
-                    setPixCode(data.pixQrCode.payload);
-                    setPixImage(data.pixQrCode.encodedImage);
-                    setStep(3); // Go to Pix display step
-                } else {
-                    alert('Assinatura realizada com sucesso!');
-                    onSuccess();
-                    onClose();
-                }
+                // Sucesso genérico (Cartão)
+                // alert('Assinatura realizada!'); 
+                onSuccess();
+                onClose();
+
             } else {
                 alert(`Erro: ${data.message || 'Falha ao assinar'}`);
             }

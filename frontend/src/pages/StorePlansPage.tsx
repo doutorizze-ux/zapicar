@@ -84,27 +84,7 @@ export function StorePlansPage() {
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">Planos e Assinaturas</h1>
                 <p className="text-gray-500">Escolha o melhor plano para sua loja</p>
-                {currentSubscription && (
-                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
-                        <div>
-                            <p className="font-bold text-blue-900">
-                                Assinatura: {currentSubscription.planName || (currentSubscription.status === 'ACTIVE' ? 'Ativa' : currentSubscription.status)}
-                            </p>
-                            <p className="text-sm text-blue-900 font-medium">
-                                Pagamento: {currentSubscription.latestPaymentStatus || (currentSubscription.active === false ? '-' : '...')}
-                            </p>
-                            <p className="text-xs text-blue-700 mt-1">
-                                ID Assinatura: {currentSubscription.id || '-'}
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => fetchSubscription()}
-                            className="text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition"
-                        >
-                            Verificar Pagamento
-                        </button>
-                    </div>
-                )}
+
             </div>
 
             <div className="flex flex-wrap justify-center gap-8">

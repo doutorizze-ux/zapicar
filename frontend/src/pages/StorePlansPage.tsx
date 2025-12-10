@@ -107,6 +107,12 @@ export function StorePlansPage() {
                                 <p className="text-gray-500 text-sm mt-1">{plan.description}</p>
                             </div>
 
+                            <div className="mb-4">
+                                <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                                    7 Dias Grátis no Cartão
+                                </span>
+                            </div>
+
                             <div className="mb-6">
                                 <span className="text-4xl font-bold text-gray-900">R$ {plan.price.toFixed(2).replace('.', ',')}</span>
                                 <span className="text-gray-500">/{plan.interval === 'MONTHLY' ? 'mês' : plan.interval}</span>

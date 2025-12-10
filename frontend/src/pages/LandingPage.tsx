@@ -9,7 +9,7 @@ export function LandingPage() {
         <div className="min-h-screen bg-[#0B2B26] font-sans text-white overflow-x-hidden selection:bg-green-500 selection:text-white">
 
             {/* Navbar */}
-            <nav className="fixed w-full bg-[#0B2B26] z-50 border-b border-white/5 h-20 flex items-center shadow-lg">
+            <nav className="fixed w-full bg-[#1F2937] z-50 border-b border-white/5 h-20 flex items-center shadow-lg">
                 <div className="max-w-7xl mx-auto w-full px-6 flex justify-between items-center">
                     <img src="/logo-dark.png" alt="Zapicar" className="h-10 w-auto brightness-0 invert" />
                     <div className="flex items-center gap-6">
@@ -20,7 +20,7 @@ export function LandingPage() {
                             onClick={() => navigate('/register')}
                             className="hidden md:flex bg-[#25D366] text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-green-500 transition-all hover:shadow-[0_0_20px_rgba(37,211,102,0.4)] transform hover:-translate-y-0.5"
                         >
-                            Comece Agora
+                            Teste 7 Dias Grátis
                         </button>
                     </div>
                 </div>
@@ -56,7 +56,7 @@ export function LandingPage() {
                                 className="px-8 py-4 bg-[#25D366] text-white rounded-full font-bold text-lg hover:bg-green-500 transition-all shadow-xl shadow-green-500/20 flex items-center justify-center gap-3 transform hover:scale-105"
                             >
                                 <MessageCircle className="w-6 h-6" />
-                                Experimente Agora
+                                Experimente 7 Dias Grátis
                             </button>
                         </div>
 

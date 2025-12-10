@@ -178,33 +178,120 @@ export function SubscribeModal({ plan, onClose, onSuccess }: SubscribeModalProps
                     )}
 
                     {step === 2 && (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {billingType === 'CREDIT_CARD' && (
-                                <>
-                                    <h3 className="font-bold text-gray-900 border-b pb-2">Dados do Cartão</h3>
-                                    <div className="space-y-3">
-                                        <input placeholder="Nome no Cartão" className="w-full border rounded-lg p-3" value={cardData.holderName} onChange={e => setCardData({ ...cardData, holderName: e.target.value })} />
-                                        <input placeholder="Número do Cartão" className="w-full border rounded-lg p-3" value={cardData.number} onChange={e => setCardData({ ...cardData, number: e.target.value })} maxLength={19} />
-                                        <div className="flex gap-3">
-                                            <input placeholder="Mês (Ex: 12)" className="w-1/3 border rounded-lg p-3" value={cardData.expiryMonth} onChange={e => setCardData({ ...cardData, expiryMonth: e.target.value })} maxLength={2} />
-                                            <input placeholder="Ano (Ex: 2028)" className="w-1/3 border rounded-lg p-3" value={cardData.expiryYear} onChange={e => setCardData({ ...cardData, expiryYear: e.target.value })} maxLength={4} />
-                                            <input placeholder="CCV" className="w-1/3 border rounded-lg p-3" value={cardData.ccv} onChange={e => setCardData({ ...cardData, ccv: e.target.value })} maxLength={4} />
+                                <div>
+                                    {/* Visual Card */}
+                                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-6 text-white mb-6 shadow-xl relative overflow-hidden transition-all hover:scale-[1.02]">
+                                        <div className="absolute -right-6 -top-6 text-white opacity-10 rotate-12">
+                                            <CreditCard className="w-48 h-48" />
+                                        </div>
+                                        <div className="relative z-10">
+                                            <div className="flex justify-between items-start mb-8">
+                                                <div className="w-12 h-9 bg-gradient-to-tr from-yellow-300 to-yellow-600 rounded-md shadow-sm border border-yellow-400/50 flex items-center justify-center relative overflow-hidden">
+                                                    <div className="absolute inset-0 bg-black/10" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%)' }} />
+                                                </div>
+                                                <span className="font-mono text-xs opacity-50 tracking-widest uppercase">Crédito</span>
+                                            </div>
+
+                                            <div className="font-mono text-2xl tracking-[0.15em] mb-6 drop-shadow-md min-h-[32px]">
+                                                {cardData.number ? cardData.number.padEnd(16, '•').replace(/(.{4})/g, '$1 ').trim() : '•••• •••• •••• ••••'}
+                                            </div>
+
+                                            <div className="flex justify-between items-end">
+                                                <div className="flex-1 mr-4 overflow-hidden">
+                                                    <div className="text-[9px] opacity-60 uppercase tracking-widest mb-1">Nome do Titular</div>
+                                                    <div className="font-medium tracking-wider uppercase truncate drop-shadow-sm font-mono text-sm">
+                                                        {cardData.holderName || 'SEU NOME AQUI'}
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-[9px] opacity-60 uppercase tracking-widest mb-1">Validade</div>
+                                                    <div className="font-mono text-sm tracking-wider">
+                                                        {cardData.expiryMonth || 'MM'}/{cardData.expiryYear?.slice(-2) || 'YY'}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </>
+
+                                    {/* Inputs */}
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5 ml-1">Número do Cartão</label>
+                                            <div className="relative">
+                                                <CreditCard className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                                                <input
+                                                    placeholder="0000 0000 0000 0000"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 font-mono text-gray-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none"
+                                                    value={cardData.number}
+                                                    onChange={e => setCardData({ ...cardData, number: e.target.value })}
+                                                    maxLength={19}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5 ml-1">Nome do Titular</label>
+                                            <input
+                                                placeholder="Como está impresso no cartão"
+                                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-medium text-gray-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none uppercase"
+                                                value={cardData.holderName}
+                                                onChange={e => setCardData({ ...cardData, holderName: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5 ml-1">Mês</label>
+                                                <input
+                                                    placeholder="MM"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-center text-gray-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none"
+                                                    value={cardData.expiryMonth}
+                                                    onChange={e => setCardData({ ...cardData, expiryMonth: e.target.value })}
+                                                    maxLength={2}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5 ml-1">Ano</label>
+                                                <input
+                                                    placeholder="AAAA"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-center text-gray-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none"
+                                                    value={cardData.expiryYear}
+                                                    onChange={e => setCardData({ ...cardData, expiryYear: e.target.value })}
+                                                    maxLength={4}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5 ml-1">CVV</label>
+                                                <input
+                                                    placeholder="123"
+                                                    type="password"
+                                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-center text-gray-700 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all outline-none"
+                                                    value={cardData.ccv}
+                                                    onChange={e => setCardData({ ...cardData, ccv: e.target.value })}
+                                                    maxLength={4}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
 
-                            <h3 className="font-bold text-gray-900 border-b pb-2 pt-2">Dados do Titular</h3>
-                            <p className="text-xs text-gray-500 mb-2">Necessário para emitir a cobrança</p>
-                            <div className="space-y-3">
-                                <input placeholder="Nome Completo" className="w-full border rounded-lg p-3" value={holderInfo.name} onChange={e => setHolderInfo({ ...holderInfo, name: e.target.value })} />
-                                <input placeholder="Email" className="w-full border rounded-lg p-3" value={holderInfo.email} onChange={e => setHolderInfo({ ...holderInfo, email: e.target.value })} />
-                                <input placeholder="CPF/CNPJ" className="w-full border rounded-lg p-3" value={holderInfo.cpfCnpj} onChange={e => setHolderInfo({ ...holderInfo, cpfCnpj: e.target.value })} />
-                                <div className="flex gap-3">
-                                    <input placeholder="CEP" className="w-1/2 border rounded-lg p-3" value={holderInfo.postalCode} onChange={e => setHolderInfo({ ...holderInfo, postalCode: e.target.value })} />
-                                    <input placeholder="Número" className="w-1/2 border rounded-lg p-3" value={holderInfo.addressNumber} onChange={e => setHolderInfo({ ...holderInfo, addressNumber: e.target.value })} />
+                            <div className="pt-2">
+                                <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900 border-b pb-2 mb-4">
+                                    <div className="w-1 h-4 bg-gray-900 rounded-full" />
+                                    Dados de Cobrança
+                                </h3>
+                                <div className="space-y-3">
+                                    <input placeholder="Nome Completo" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" value={holderInfo.name} onChange={e => setHolderInfo({ ...holderInfo, name: e.target.value })} />
+                                    <input placeholder="CPF/CNPJ" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" value={holderInfo.cpfCnpj} onChange={e => setHolderInfo({ ...holderInfo, cpfCnpj: e.target.value })} />
+                                    <div className="flex gap-3">
+                                        <input placeholder="CEP" className="w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" value={holderInfo.postalCode} onChange={e => setHolderInfo({ ...holderInfo, postalCode: e.target.value })} />
+                                        <input placeholder="Número" className="w-1/2 bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" value={holderInfo.addressNumber} onChange={e => setHolderInfo({ ...holderInfo, addressNumber: e.target.value })} />
+                                    </div>
+                                    <input placeholder="Telefone" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all" value={holderInfo.phone} onChange={e => setHolderInfo({ ...holderInfo, phone: e.target.value })} />
                                 </div>
-                                <input placeholder="Telefone com DDD" className="w-full border rounded-lg p-3" value={holderInfo.phone} onChange={e => setHolderInfo({ ...holderInfo, phone: e.target.value })} />
                             </div>
                         </div>
                     )}

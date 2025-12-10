@@ -66,18 +66,55 @@ export class SubscriptionsService {
             }
         }
 
-        try {
-            const subscription = await this.asaasService.createSubscription({
-                customer: customerId,
-                billingType: billingType || 'PIX',
-                value: plan.price,
-                nextDueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                cycle: plan.interval,
-                description: `Assinatura Plano ${plan.name}`,
-                creditCard,
-                creditCardHolderInfo
-            });
+        let subscription;
+        const subscriptionPayload = {
+            billingType: billingType || 'PIX',
+            value: plan.price,
+            nextDueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            cycle: plan.interval,
+            description: `Assinatura Plano ${plan.name}`,
+            creditCard,
+            creditCardHolderInfo
+        };
 
+        try {
+            subscription = await this.asaasService.createSubscription({
+                customer: customerId,
+                ...subscriptionPayload
+            });
+        } catch (error) {
+            // Check if error is due to invalid customer ID (common when switching Sandbox -> Prod)
+            if (error.message && (error.message.includes('invalid_customer') || error.message.includes('Cliente inválido'))) {
+                console.warn(`[Subscriptions] Invalid Customer ID ${customerId} detected. Creating new customer...`);
+
+                try {
+                    const newCustomer = await this.asaasService.createCustomer({
+                        name: customerData.name,
+                        email: customerData.email,
+                        cpfCnpj: customerData.cpfCnpj,
+                        externalReference: user.id,
+                        phone: customerData.phone
+                    });
+
+                    customerId = newCustomer.id;
+                    await this.usersService.updateById(user.id, { asaasCustomerId: customerId });
+
+                    // Retry subscription creation with new ID
+                    subscription = await this.asaasService.createSubscription({
+                        customer: customerId,
+                        ...subscriptionPayload
+                    });
+                } catch (retryError) {
+                    console.error('Failed to recover from invalid_customer error:', retryError);
+                    throw new BadRequestException(retryError.message || 'Falha ao recriar cliente e assinatura.');
+                }
+            } else {
+                console.error('Error creating Asaas subscription:', error);
+                throw new BadRequestException(error.message || 'Failed to create subscription');
+            }
+        }
+
+        try {
             await this.usersService.updateById(user.id, { subscriptionId: subscription.id, planId: planId });
 
             let pixQrCode = null;
@@ -100,9 +137,10 @@ export class SubscriptionsService {
             }
 
             return { subscription, pixQrCode, paymentUrl };
-        } catch (error) {
-            console.error('Error creating Asaas subscription:', error);
-            throw new BadRequestException(error.message || 'Failed to create subscription');
+        } catch (postSubError) {
+            console.error('Error post-subscription processing:', postSubError);
+            // Return subscription anyway since it was created at the provider
+            return { subscription };
         }
     }
 

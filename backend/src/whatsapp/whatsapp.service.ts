@@ -218,22 +218,16 @@ export class WhatsappService implements OnModuleInit {
         // Optimization: If inventory is huge, we might overwhelm the AI prompt.
         // But for < 50 cars, sending all is better for intelligence (typo correction).
         // If > 50, we implement a lightweight fuzzy filter or just slice.
-        if (allVehicles.length > 50) {
-            // Fallback to keyword matching only if list is massive
-            contextVehicles = allVehicles.filter(v => {
-                const searchTerms = [v.name, v.brand, v.model].map(t => t?.toLowerCase() || '');
-                // Simple inclusion check
-                return searchTerms.some(term => term && msg.includes(term));
-            });
-            // If strict filter fails, fallback to recent cars to give AI some context
-            if (contextVehicles.length === 0) {
-                contextVehicles = allVehicles.slice(0, 20);
-            }
-        }
+        // 2. Prepare Context (Strict Search)
+        // Only include vehicles that actually match terms in the message
+        contextVehicles = allVehicles.filter(v => {
+            const searchTerms = [v.name, v.brand, v.model, v.year?.toString()].map(t => t?.toLowerCase() || '');
+            // Check if any car term appears in the user message
+            return searchTerms.some(term => term && term.length > 2 && msg.includes(term));
+        });
 
         const ignoreTerms = ['bom', 'boa', 'tarde', 'noite', 'dia', 'ola', 'olá', 'tudo', 'bem', 'sim', 'não', 'quero'];
         const isGeneric = ignoreTerms.includes(msg) || msg.length <= 3;
-
 
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -244,7 +238,8 @@ export class WhatsappService implements OnModuleInit {
         const fallbackResponse = async (): Promise<string> => {
             const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'epa', 'opa'];
 
-            if (greetings.some(g => msg.includes(g)) && contextVehicles.length === 0) {
+            // If it's a greeting (even if we found cars coincidentally, strictly prefer greeting for short msgs)
+            if (greetings.some(g => msg === g || (msg.includes(g) && msg.length < 10))) {
                 shouldShowCars = false;
                 return `Olá! 👋 Bem-vindo à *${storeName}*.\n\nSou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *Estoque* para ver nossas novidades!`;
             }

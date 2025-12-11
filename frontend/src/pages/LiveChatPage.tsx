@@ -71,6 +71,12 @@ export function LiveChatPage() {
                 }
 
                 const partnerId = cleanFrom;
+
+                // AUTO-SELECT If no chat is open, open this one automatically
+                if (!activeContactIdRef.current) {
+                    setActiveContactId(partnerId);
+                }
+
                 const existing = prev.find(c => c.id === partnerId);
 
                 if (existing) {

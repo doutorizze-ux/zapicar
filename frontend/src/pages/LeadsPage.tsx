@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, MessageSquare, Phone, Calendar } from 'lucide-react';
+import { User, MessageSquare, Phone, Calendar, Plus } from 'lucide-react';
 import { API_URL } from '../config';
+import { CreateLeadModal } from '../components/CreateLeadModal';
 
 interface Lead {
     id: string;
@@ -17,6 +18,7 @@ export function LeadsPage() {
     const { token } = useAuth();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     useEffect(() => {
         fetchLeads();
@@ -62,8 +64,17 @@ export function LeadsPage() {
                     <h1 className="text-2xl font-bold text-gray-900">Meus Leads</h1>
                     <p className="text-gray-500">Gerencie os contatos capturados pelo seu assistente virtual.</p>
                 </div>
-                <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600">
-                    Total: {leads.length} Leads
+                <div className="flex gap-3">
+                    <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 flex items-center">
+                        Total: {leads.length}
+                    </div>
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Novo Lead
+                    </button>
                 </div>
             </div>
 
@@ -144,6 +155,15 @@ export function LeadsPage() {
                     </table>
                 </div>
             </div>
-        </div>
+
+
+            <CreateLeadModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={() => {
+                    fetchLeads();
+                }}
+            />
+        </div >
     );
 }

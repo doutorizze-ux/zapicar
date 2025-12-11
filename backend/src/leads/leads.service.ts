@@ -10,6 +10,10 @@ export class LeadsService {
         private leadsRepository: Repository<Lead>,
     ) { }
 
+    async create(storeId: string, dto: any) {
+        return this.upsert(storeId, dto.phone, dto.description || 'Lead Manual', dto.name);
+    }
+
     async upsert(storeId: string, phone: string, message: string, name?: string) {
         let lead = await this.leadsRepository.findOne({ where: { storeId, phone } });
 

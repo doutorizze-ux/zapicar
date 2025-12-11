@@ -1,10 +1,18 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { LeadsService } from './leads.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { CreateLeadDto } from './dto/create-lead.dto';
 
 @Controller('leads')
 export class LeadsController {
     constructor(private readonly leadsService: LeadsService) { }
+
+    @UseGuards(JwtAuthGuard)
+    @Post()
+    async create(@Request() req, @Body() createLeadDto: CreateLeadDto) {
+        return this.leadsService.create(req.user.userId, createLeadDto);
+    }
 
     @UseGuards(JwtAuthGuard)
     @Get()

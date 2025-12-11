@@ -200,7 +200,12 @@ export class WhatsappService implements OnModuleInit {
         }
 
         try {
+            console.log(`[SIMULAÇÃO] Iniciando processamento para ${userId} - Msg: ${body}`);
             await this.handleMessage(mockMessage, userId);
+            console.log('[SIMULAÇÃO] Processamento concluído com sucesso.');
+        } catch (error) {
+            console.error('[SIMULAÇÃO] Erro critico ao processar mensagem simulada:', error);
+            throw error; // Re-throw to let controller know
         } finally {
             // Restore state if we mocked the client
             if (!originalClient) {

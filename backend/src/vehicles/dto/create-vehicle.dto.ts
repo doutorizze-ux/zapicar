@@ -14,4 +14,9 @@ export class CreateVehicleDto {
     price: number;
     location: string;
     images: string[];
+    trava?: boolean;
+    alarme?: boolean;
+    som?: boolean;
+    teto?: boolean;
+    banco_couro?: boolean;
 }

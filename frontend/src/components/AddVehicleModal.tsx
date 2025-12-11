@@ -32,6 +32,11 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
         color: '',
         description: '',
         location: '',
+        trava: false,
+        alarme: false,
+        som: false,
+        teto: false,
+        banco_couro: false,
     });
 
     // Update form data when initialData changes
@@ -50,6 +55,11 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                 color: initialData.color || '',
                 description: initialData.description || '',
                 location: initialData.location || '',
+                trava: initialData.trava || false,
+                alarme: initialData.alarme || false,
+                som: initialData.som || false,
+                teto: initialData.teto || false,
+                banco_couro: initialData.banco_couro || false,
             });
         }
     }, [initialData]);
@@ -141,6 +151,11 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, checked } = e.target;
+        setFormData(prev => ({ ...prev, [name]: checked }));
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,6 +290,32 @@ export function AddVehicleModal({ isOpen, onClose, onSuccess, initialData }: Add
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Localização</label>
                             <input name="location" value={formData.location} onChange={handleChange} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Opcionais</label>
+                        <div className="flex flex-wrap gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="trava" checked={formData.trava} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300" />
+                                <span className="text-sm text-gray-700">Trava Elétrica</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="alarme" checked={formData.alarme} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300" />
+                                <span className="text-sm text-gray-700">Alarme</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="som" checked={formData.som} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300" />
+                                <span className="text-sm text-gray-700">Som</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="teto" checked={formData.teto} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300" />
+                                <span className="text-sm text-gray-700">Teto Solar</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="banco_couro" checked={formData.banco_couro} onChange={handleCheckboxChange} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300" />
+                                <span className="text-sm text-gray-700">Banco de Couro</span>
+                            </label>
                         </div>
                     </div>
 

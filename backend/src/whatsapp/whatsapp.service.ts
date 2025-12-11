@@ -297,11 +297,20 @@ export class WhatsappService implements OnModuleInit {
 
         if (vehiclesToShow.length > 0) {
             for (const car of vehiclesToShow.slice(0, 5)) {
+                const features: string[] = [];
+                if (car.trava) features.push('Trava');
+                if (car.alarme) features.push('Alarme');
+                if (car.som) features.push('Som');
+                if (car.teto) features.push('Teto Solar');
+                if (car.banco_couro) features.push('Banco de Couro');
+
+                const featuresText = features.length > 0 ? `✨ Opcionais: ${features.join(', ')}\n` : '';
+
                 const specs = `🔹 *${car.brand} ${car.name}* ${car.model || ''}
 📅 Ano: ${car.year} | 🚦 Km: ${car.km || 'N/A'}
 ⛽ Combustível: ${car.fuel} | ⚙️ Câmbio: ${car.transmission}
 🎨 Cor: ${car.color}
-💰 *R$ ${Number(car.price).toLocaleString('pt-BR')}*
+${featuresText}💰 *R$ ${Number(car.price).toLocaleString('pt-BR')}*
 
 _Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
 

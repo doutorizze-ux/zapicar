@@ -54,6 +54,21 @@ export class Vehicle {
     @Column('simple-json', { nullable: true })
     images: string[];
 
+    @Column({ default: false })
+    trava: boolean;
+
+    @Column({ default: false })
+    alarme: boolean;
+
+    @Column({ default: false })
+    som: boolean;
+
+    @Column({ default: false })
+    teto: boolean;
+
+    @Column({ default: false })
+    banco_couro: boolean;
+
     @ManyToOne(() => Store)
     store: Store;
 

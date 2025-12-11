@@ -74,6 +74,17 @@ export class WhatsappService implements OnModuleInit {
 
     onModuleInit() {
         this.initializeAI();
+        this.cleanSimulationData();
+    }
+
+    private async cleanSimulationData() {
+        try {
+            await this.chatRepository.delete({ contactId: '5511999999999' });
+            await this.chatRepository.delete({ contactId: '5511999999999@c.us' });
+            console.log('Cleaned up simulation data artifacts.');
+        } catch (e) {
+            console.error('Failed to cleanup sim data', e);
+        }
     }
 
     private initializeAI() {

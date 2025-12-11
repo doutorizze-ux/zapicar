@@ -38,8 +38,20 @@ export function LiveChatPage() {
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+
     useEffect(() => {
-        const socketUrl = API_URL.replace('/api', '');
+        // Fix Socket URL:
+        // If API_URL is '/api' (relative), we want to connect to the root '/' (origin).
+        // If API_URL is 'http://localhost:3000/api', we want 'http://localhost:3000'.
+        let socketUrl = API_URL;
+        if (socketUrl.startsWith('/')) {
+            socketUrl = window.location.origin; // Connect to same domain root
+        } else {
+            socketUrl = socketUrl.replace('/api', '');
+        }
+
+        console.log('Connecting Socket to:', socketUrl);
+
         const newSocket = io(socketUrl, {
             path: '/socket.io',
             transports: ['websocket', 'polling']

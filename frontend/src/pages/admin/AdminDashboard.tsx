@@ -1,5 +1,5 @@
 
-import { Users, DollarSign, Package, Car, TrendingUp, ArrowRight, Shield, Settings, CreditCard } from 'lucide-react';
+import { Users, DollarSign, Package, Car, TrendingUp, ArrowRight, Shield, CreditCard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { API_URL } from '../../config';

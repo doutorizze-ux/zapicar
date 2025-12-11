@@ -172,6 +172,43 @@ export class WhatsappService implements OnModuleInit {
         });
     }
 
+    async simulateIncomingMessage(userId: string, body: string, fromNum: string = '5511999999999') {
+        const from = fromNum.includes('@c.us') ? fromNum : `${fromNum}@c.us`;
+
+        // Mock Message Object
+        const mockMessage: any = {
+            id: { id: 'sim-' + Date.now() },
+            from: from,
+            body: body,
+            timestamp: Date.now() / 1000,
+            getContact: async () => ({ name: 'Cliente Simulado', pushname: 'Visitante' }),
+            reply: async (text: string) => {
+                console.log('[SIMULAÇÃO] Bot respondeu:', text);
+                return {} as any; // Mock return
+            }
+        };
+
+        // Inject Mock Client just for this call if real one is missing
+        const originalClient = this.clients.get(userId);
+        if (!originalClient) {
+            const mockClient: any = {
+                sendMessage: async (to: string, content: any) => {
+                    console.log('[SIMULAÇÃO] Enviando mensagem/media para', to, content);
+                }
+            };
+            this.clients.set(userId, mockClient);
+        }
+
+        try {
+            await this.handleMessage(mockMessage, userId);
+        } finally {
+            // Restore state if we mocked the client
+            if (!originalClient) {
+                this.clients.delete(userId);
+            }
+        }
+    }
+
     private async handleMessage(message: Message, userId: string) {
         // 0. Emit Incoming Message to Live Chat
         try {

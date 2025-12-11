@@ -27,6 +27,13 @@ export class WhatsappController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Post('simulate')
+    async simulateMessage(@Request() req, @Body() body: { text: string; from?: string }) {
+        await this.whatsappService.simulateIncomingMessage(req.user.userId, body.text, body.from);
+        return { status: 'Simulated' };
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Post('send')
     async sendMessage(@Request() req, @Body() body: { to: string; message: string }) {
         await this.whatsappService.sendManualMessage(req.user.userId, body.to, body.message);

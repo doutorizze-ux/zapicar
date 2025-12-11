@@ -365,24 +365,44 @@ export function LiveChatPage() {
                         )}
                     </div>
 
-                    <button
-                        onClick={async () => {
-                            const newState = !botPaused;
-                            try {
-                                const token = localStorage.getItem('token');
-                                await fetch(`${API_URL}/whatsapp/pause`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                                    body: JSON.stringify({ paused: newState })
-                                });
-                                setBotPaused(newState);
-                            } catch (e) { console.error(e); }
-                        }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${botPaused ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                    >
-                        {botPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
-                        {botPaused ? 'IA PAUSADA (Retomar)' : 'PAUSAR IA'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => {
+                                const simText = prompt("Digite uma mensagem para simular o cliente:");
+                                if (simText) {
+                                    const token = localStorage.getItem('token');
+                                    fetch(`${API_URL}/whatsapp/simulate`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                        body: JSON.stringify({ text: simText, from: activeContactId || '5511999999999' })
+                                    });
+                                }
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                            title="Testar resposta da IA como se fosse um cliente"
+                        >
+                            <span className="text-xs">🧪 Simular</span>
+                        </button>
+
+                        <button
+                            onClick={async () => {
+                                const newState = !botPaused;
+                                try {
+                                    const token = localStorage.getItem('token');
+                                    await fetch(`${API_URL}/whatsapp/pause`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                        body: JSON.stringify({ paused: newState })
+                                    });
+                                    setBotPaused(newState);
+                                } catch (e) { console.error(e); }
+                            }}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${botPaused ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            {botPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
+                            {botPaused ? 'IA PAUSADA (Retomar)' : 'PAUSAR IA'}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Messages */}

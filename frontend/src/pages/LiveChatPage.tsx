@@ -372,39 +372,7 @@ export function LiveChatPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={async () => {
-                                const simText = prompt("Digite uma mensagem para simular o cliente:");
-                                if (simText) {
-                                    const token = localStorage.getItem('token');
-                                    // Use a fixed ID for simulation so we can select it easily
-                                    const simId = activeContactId || '5511999999999';
 
-                                    try {
-                                        await fetch(`${API_URL}/whatsapp/simulate`, {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                                            body: JSON.stringify({ text: simText, from: simId })
-                                        });
-
-                                        // Refresh contacts to show the new simulation
-                                        setTimeout(() => {
-                                            fetchContacts();
-                                            if (!activeContactId) setActiveContactId(simId);
-                                        }, 1000);
-
-                                        alert("Simulação enviada! Aguarde a resposta do Robô.");
-                                    } catch (e) {
-                                        console.error(e);
-                                        alert("Erro ao simular.");
-                                    }
-                                }
-                            }}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-                            title="Testar resposta da IA como se fosse um cliente"
-                        >
-                            <span className="text-xs">🧪 Simular</span>
-                        </button>
 
                         <button
                             onClick={async () => {

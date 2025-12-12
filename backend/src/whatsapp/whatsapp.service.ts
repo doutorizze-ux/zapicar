@@ -127,32 +127,45 @@ export class WhatsappService implements OnModuleInit {
     }
 
     private async restoreSessions() {
-        console.log('Restoring WhatsApp sessions...');
+        console.log('[Session Restore] Starting session restoration...');
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const fs = require('fs');
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const path = require('path');
         const authPath = path.join(process.cwd(), '.wwebjs_auth');
 
+        console.log('[Session Restore] Looking for sessions in:', authPath);
+
         if (fs.existsSync(authPath)) {
             const files = fs.readdirSync(authPath);
-            for (const file of files) {
-                if (file.startsWith('session-store-')) {
-                    // Folder name: session-store-{userId} (because clientId is store-{userId})
-                    // But we used clientId: store-{userId} which wwebjs turns into session-store-{userId}
-                    const userId = file.replace('session-store-', '');
+            console.log('[Session Restore] Found folders:', files);
 
-                    // Validation: Ensure we stripped it correctly and didn't match something weird
+            for (const file of files) {
+                console.log('[Session Restore] Processing folder:', file);
+
+                if (file.startsWith('session-')) {
+                    // Extract userId from folder name
+                    // Expected format: session-store-{userId}
+                    const userId = file.replace('session-', '');
+
+                    console.log('[Session Restore] Extracted userId:', userId);
+
+                    // Validation
                     if (userId && !userId.startsWith('session-') && !this.clients.has(userId)) {
-                        console.log(`[Restore] Found session for user ${userId}, restoring...`);
+                        console.log(`[Session Restore] ✅ Restoring session for user: ${userId}`);
                         this.initializeClient(userId);
-                        // Add a small delay to prevent CPU spike if many sessions
                         await new Promise(r => setTimeout(r, 1000));
+                    } else {
+                        console.log(`[Session Restore] ⏭️ Skipping folder ${file} - userId: ${userId}, already has client: ${this.clients.has(userId)}`);
                     }
+                } else {
+                    console.log(`[Session Restore] ⏭️ Skipping non-session folder: ${file}`);
                 }
             }
+
+            console.log('[Session Restore] Restoration complete. Active clients:', Array.from(this.clients.keys()));
         } else {
-            console.log('No existing sessions to restore.');
+            console.log('[Session Restore] ⚠️ No .wwebjs_auth directory found. No sessions to restore.');
         }
     }
 

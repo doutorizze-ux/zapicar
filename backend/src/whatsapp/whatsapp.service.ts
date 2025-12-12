@@ -234,18 +234,22 @@ export class WhatsappService implements OnModuleInit {
 
         // 1. Get User Context
         const user = await this.usersService.findById(userId);
-        const storeName = user?.storeName || "ZapCar";
-
-        // 2. Prepare Context (Smarter Search)
         // 2. Prepare Context
         const allVehicles = await this.vehiclesService.findAll(userId);
-        // Optimization: Pass up to 50 vehicles to the AI and let it decide matches/typos.
-        // The previous strict filter was too aggressive (requiring full name match).
-        let contextVehicles = allVehicles;
-        if (contextVehicles.length > 50) {
-            // Simple heuristic: if too many cars, try a very loose filter or just take top 50 recent
-            // For now, slicing top 50 to avoid token limit issues while keeping it smart.
-            contextVehicles = contextVehicles.slice(0, 50);
+
+        // Strict Search for Fallback (classic logic)
+        const strictMatchVehicles = allVehicles.filter(v => {
+            const searchTerms = [v.name, v.brand, v.model, v.year?.toString()].map(t => t?.toLowerCase() || '');
+            return searchTerms.some(term => term && term.length > 2 && msg.includes(term));
+        });
+
+        // This variable is used by Fallback and Display logic
+        let contextVehicles = strictMatchVehicles;
+
+        // Context for AI (Broad - up to 50 items to allow fuzzy matching)
+        let aiContextVehicles = allVehicles;
+        if (aiContextVehicles.length > 50) {
+            aiContextVehicles = aiContextVehicles.slice(0, 50);
         }
 
         const ignoreTerms = ['bom', 'boa', 'tarde', 'noite', 'dia', 'ola', 'olá', 'tudo', 'bem', 'sim', 'não', 'quero'];
@@ -260,10 +264,10 @@ export class WhatsappService implements OnModuleInit {
         const fallbackResponse = async (): Promise<string> => {
             const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'epa', 'opa'];
 
-            // If it's a greeting (even if we found cars coincidentally, strictly prefer greeting for short msgs)
+            // Greeting handling
             if (greetings.some(g => msg === g || (msg.includes(g) && msg.length < 10))) {
                 shouldShowCars = false;
-                return `Olá! 👋 Bem-vindo à *${storeName}*.\n\nSou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *Estoque* para ver nossas novidades!`;
+                return `Olá! 👋 Bem-vindo à *${storeName}*.\n\nSou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *Estoque* para ver tudo.`;
             }
 
             if (msg.includes('endereço') || msg.includes('local') || msg.includes('onde fica')) {
@@ -271,30 +275,38 @@ export class WhatsappService implements OnModuleInit {
                 return `📍 Estamos localizados em: [Endereço da Loja].\nVenha nos visitar!`;
             }
 
-            if (contextVehicles.length > 0) {
+            // Use Strict Matches (so we don't spam random cars if simple keyword match fails)
+            if (strictMatchVehicles.length > 0) {
+                // If we have strict matches, use them
+                contextVehicles = strictMatchVehicles;
                 shouldShowCars = true;
-                return `Encontrei ${contextVehicles.length} opção(ões) que podem te interessar! 🚘\n\nVou te mandar as fotos e detalhes agora:`;
+                return `Encontrei ${strictMatchVehicles.length} opção(ões) que podem te interessar! 🚘\n\nVou te mandar as fotos e detalhes agora:`;
             }
 
             if (msg.includes('estoque') || msg.includes('catalogo') || msg.includes('catálogo')) {
+                // Show top 5 recent
                 contextVehicles = allVehicles.slice(0, 5);
                 shouldShowCars = true;
                 return `Claro! Aqui estão alguns destaques do nosso estoque atual:`;
             }
 
             shouldShowCars = false;
-            return `Desculpe, não entendi bem. 😕\n\nPor favor, diga o **nome do carro** que procura (ex: *Gol*, *Corolla*) ou digite *Estoque* para ver tudo.`;
+            // Improved "Not Found" message
+            return `Poxa, procurei aqui e não encontrei nenhum carro com nome *"${message.body}"* no momento. 😕\n\nMas temos muitas outras opções! Digite *Estoque* para ver o que chegou.`;
         };
 
         // 4. Try FAQ Match First
         const faqMatch = await this.faqService.findMatch(userId, msg);
+
+
 
         if (faqMatch) {
             responseText = faqMatch;
             shouldShowCars = false;
         } else if (this.model) {
             try {
-                const params = contextVehicles.map(v =>
+                // AI uses the BROAD list
+                const params = aiContextVehicles.map(v =>
                     `- ${v.brand} ${v.name} ${v.model} (${v.year})`
                 ).join('\n');
 

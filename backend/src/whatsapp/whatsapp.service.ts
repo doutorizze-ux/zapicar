@@ -74,17 +74,40 @@ export class WhatsappService implements OnModuleInit {
 
     async getRecentChats(storeId: string) {
         // Fetch distinct contacts from message history
-        // Since we can't easily do DISTINCT ON in generic SQL via TypeORM simple find, we use query builder
-        return this.chatRepository
+        const rawChats = await this.chatRepository
             .createQueryBuilder("msg")
             .select("msg.contactId", "id")
-            .addSelect("MAX(msg.senderName)", "name") // basic guess for name
-            .addSelect("MAX(msg.createdAt)", "lastTime") // most recent time
-            .addSelect("SUBSTRING(MAX(CONCAT(msg.createdAt, '|||', msg.body)), 25)", "lastMessage") // trick to get last message content
+            // Logic to find the Customer's Name (ignore 'me' or 'bot' senderNames)
+            .addSelect("MAX(CASE WHEN msg.isBot = 0 AND msg.from != 'me' THEN msg.senderName ELSE NULL END)", "customerName")
+            .addSelect("MAX(msg.createdAt)", "lastTime")
+            // Get last message content via concatenation trick (Lexicographical MAX of ISO Date + Body works for "Last Message")
+            // We retrieve the full string and parse in JS to avoid SQL substing index guessing
+            .addSelect("MAX(CONCAT(msg.createdAt, '|||', msg.body))", "rawLastMessage")
             .where("msg.storeId = :storeId", { storeId })
             .groupBy("msg.contactId")
-            .orderBy("lastTime", "DESC") // Cannot use alias in older SQL sometimes, but usually fine
+            .orderBy("lastTime", "DESC")
             .getRawMany();
+
+        return rawChats.map(chat => {
+            // Split "2025-12-11T...|||Hello World"
+            let body = '';
+            if (chat.rawLastMessage) {
+                const parts = chat.rawLastMessage.split('|||');
+                if (parts.length >= 2) {
+                    // Re-join just in case body contained '|||'
+                    body = parts.slice(1).join('|||');
+                } else {
+                    body = chat.rawLastMessage;
+                }
+            }
+
+            return {
+                id: chat.id,
+                name: chat.customerName || chat.id, // Fallback to number if no customer name found
+                lastTime: chat.lastTime,
+                lastMessage: body
+            };
+        });
     }
 
     onModuleInit() {

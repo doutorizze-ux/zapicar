@@ -8,12 +8,17 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
-      - JWT_SECRET=super-secret-key-change-this
+      - DATABASE_PATH=/app/data/zapcar.db
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-this}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ASAAS_API_KEY=${ASAAS_API_KEY}
+      - ASAAS_API_URL=${ASAAS_API_URL}
     volumes:
-      - ./backend/zapcar.db:/app/zapcar.db
-      - ./backend/.wwebjs_auth:/app/.wwebjs_auth
-      - ./backend/.wwebjs_cache:/app/.wwebjs_cache
+      # Use named volumes for persistence across deployments
+      - zapcar_data:/app/data
+      - zapcar_uploads:/app/uploads
+      - whatsapp_session:/app/.wwebjs_auth
+      - whatsapp_cache:/app/.wwebjs_cache
 
   frontend:
     build: ./frontend
@@ -22,3 +27,9 @@ services:
       - "80:80"
     depends_on:
       - backend
+
+volumes:
+  zapcar_data:
+  zapcar_uploads:
+  whatsapp_session:
+  whatsapp_cache:

@@ -39,6 +39,31 @@ export function WhatsappPage() {
         return () => clearInterval(interval);
     }, []);
 
+    const handleReset = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        // Visual feedback
+        setQrCode(null);
+        setLoading(true);
+
+        try {
+            await fetch(`${API_URL}/whatsapp/reset`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            // Wait a bit for backend to process
+            setTimeout(() => {
+                setLoading(false);
+            }, 2000);
+        } catch (error) {
+            console.error("Failed to reset WhatsApp", error);
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="max-w-4xl mx-auto space-y-8">
             <div>
@@ -74,6 +99,16 @@ export function WhatsappPage() {
                             Online e Operante
                         </div>
                     )}
+
+                    {/* Reset Button (Visible even if connected, just in case, but user asked specifically below QR) */}
+                    {status === 'CONNECTED' && (
+                        <button
+                            onClick={handleReset}
+                            className="text-sm text-red-500 hover:text-red-700 underline flex items-center gap-1"
+                        >
+                            <RefreshCw className="w-3 h-3" /> Resetar Conexão
+                        </button>
+                    )}
                 </div>
 
                 {/* QR Code Card */}
@@ -90,17 +125,29 @@ export function WhatsappPage() {
                             </div>
                             <p className="text-sm text-gray-500">Conexão estabelecida com sucesso.</p>
                         </div>
-                    ) : qrCode ? (
-                        <div className="space-y-6 text-center">
-                            <div className="bg-white p-4 rounded-xl border-2 border-gray-100 inline-block">
-                                <QRCode value={qrCode} size={200} />
-                            </div>
-                            <p className="text-sm text-gray-400">Atualiza automaticamente a cada 5s</p>
-                        </div>
                     ) : (
-                        <div className="text-center text-gray-500">
-                            <p>Aguardando Código QR...</p>
-                            <p className="text-xs text-gray-400 mt-2">(Verifique se o backend está rodando)</p>
+                        <div className="flex flex-col items-center w-full">
+                            {qrCode ? (
+                                <div className="space-y-6 text-center mb-8">
+                                    <div className="bg-white p-4 rounded-xl border-2 border-gray-100 inline-block">
+                                        <QRCode value={qrCode} size={200} />
+                                    </div>
+                                    <p className="text-sm text-gray-400">Atualiza automaticamente a cada 5s</p>
+                                </div>
+                            ) : (
+                                <div className="text-center text-gray-500 mb-8">
+                                    <p>Aguardando Código QR...</p>
+                                    <p className="text-xs text-gray-400 mt-2">(Verifique se o backend está rodando)</p>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handleReset}
+                                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
+                            >
+                                <RefreshCw className="w-5 h-5" />
+                                {qrCode ? 'Gerar Novo QR Code' : 'Forçar Geração de QR'}
+                            </button>
                         </div>
                     )}
                 </div>

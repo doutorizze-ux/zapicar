@@ -20,6 +20,8 @@ services:
       - whatsapp_session:/app/.wwebjs_auth
       - whatsapp_cache:/app/.wwebjs_cache
       - ./backend/env:/app/.env
+    networks:
+      - zapcar_network
 
   evolution:
     image: attrium/evolution-api:v2.1.1
@@ -31,6 +33,8 @@ services:
       - AUTHENTICATION_API_KEY=B8D69066-512E-4161-8C2A-4C2366881234
     volumes:
       - evolution_store:/evolution/store
+    networks:
+      - zapcar_network
 
   frontend:
     build: ./frontend
@@ -39,6 +43,8 @@ services:
       - "80:80"
     depends_on:
       - backend
+    networks:
+      - zapcar_network
 
 volumes:
   zapcar_data:
@@ -46,3 +52,8 @@ volumes:
   whatsapp_session:
   whatsapp_cache:
   evolution_store:
+
+
+networks:
+  zapcar_network:
+    driver: bridge

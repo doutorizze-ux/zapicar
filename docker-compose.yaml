@@ -2,47 +2,58 @@ version: '3.8'
 
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: zapcar-backend
-    container_name: zapcar_backend
+    build: ./backend
     restart: always
-    environment:
-      # Database Persistence
-      DATABASE_PATH: /app/data/zapcar_v3.db
-      # Keys (You must set these in Coolify UI Variables)
-      ASAAS_API_URL: ${ASAAS_API_URL}
-      ASAAS_API_KEY: ${ASAAS_API_KEY}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      # JWT Secret
-      JWT_SECRET: ${JWT_SECRET:-secretKey}
-      PORT: 3000
     ports:
       - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_PATH=/app/data/zapcar.db
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-this}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ASAAS_API_KEY=${ASAAS_API_KEY}
+      - ASAAS_API_URL=${ASAAS_API_URL}
     volumes:
-      # Persist SQLite Database
+      # Use named volumes for persistence across deployments
       - zapcar_data:/app/data
-      # Persist Uploads
       - zapcar_uploads:/app/uploads
-      # Persist WhatsApp Session
       - whatsapp_session:/app/.wwebjs_auth
+      - whatsapp_cache:/app/.wwebjs_cache
+      - ./backend/env:/app/.env
+    networks:
+      - zapcar_network
+
+  evolution:
+    image: attrium/evolution-api:v2.1.1
+    restart: always
+    ports:
+      - "8081:8080"
+    environment:
+      - SERVER_URL=http://localhost:8081
+      - AUTHENTICATION_API_KEY=B8D69066-512E-4161-8C2A-4C2366881234
+    volumes:
+      - evolution_store:/evolution/store
+    networks:
+      - zapcar_network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        # Important: Frontend needs to know Backend URL at build time
-        VITE_API_URL: ${VITE_API_URL}
-    image: zapcar-frontend
-    container_name: zapcar_frontend
+    build: ./frontend
     restart: always
-
+    ports:
+      - "80:80"
     depends_on:
       - backend
+    networks:
+      - zapcar_network
 
 volumes:
   zapcar_data:
   zapcar_uploads:
   whatsapp_session:
+  whatsapp_cache:
+  evolution_store:
+
+
+networks:
+  zapcar_network:
+    driver: bridge

@@ -73,4 +73,11 @@ export class UsersController {
     async updateUser(@Param('id') id: string, @Body() body: any) {
         return this.usersService.updateById(id, body);
     }
+
+    // TEMP: Force Reset to ensure access - Re-added for Production fix
+    @Post('force-reset-admin')
+    async forceReset() {
+        // Resets to 'admin'
+        return this.usersService.seedAdmin(true);
+    }
 }

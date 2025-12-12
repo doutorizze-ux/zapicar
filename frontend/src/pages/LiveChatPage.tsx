@@ -86,9 +86,10 @@ export function LiveChatPage() {
                 });
                 if (res.ok) {
                     const history = await res.json();
+                    console.log('[LiveChat] Loaded history for', activeContactId, ':', history.length, 'messages');
                     setMessages(history.map((h: any) => ({
                         id: h.id,
-                        from: h.from === 'me' ? 'me' : h.contactId, // Normalize
+                        from: h.from, // Use h.from directly - it's already clean
                         body: h.body,
                         timestamp: new Date(h.createdAt).getTime() / 1000,
                         senderName: h.senderName,
@@ -130,6 +131,13 @@ export function LiveChatPage() {
             const cleanFrom = rawMsg.from.replace(/@c\.us|@g\.us/g, '');
             const msg = { ...rawMsg, from: cleanFrom };
 
+            console.log('[LiveChat] Received message:', {
+                from: msg.from,
+                isBot: msg.isBot,
+                body: msg.body.substring(0, 50),
+                activeContact: activeContactIdRef.current
+            });
+
             // 3.1. Update Contact List (Move to top or Add)
             setContacts(prev => {
                 const partnerId = (msg.isBot || msg.from === 'me') ? activeContactIdRef.current : cleanFrom;
@@ -157,10 +165,20 @@ export function LiveChatPage() {
                 // (we assume bot messages in real-time are for the active conversation)
                 const isBotMessage = (msg.from === 'me' || msg.from === 'bot' || msg.isBot);
 
+                console.log('[LiveChat] Message filter:', {
+                    isCustomerMessage,
+                    isBotMessage,
+                    willAdd: isCustomerMessage || isBotMessage
+                });
+
                 if (isCustomerMessage || isBotMessage) {
                     setMessages(prev => {
                         // Avoid duplicates
-                        if (prev.find(m => m.id === msg.id)) return prev;
+                        if (prev.find(m => m.id === msg.id)) {
+                            console.log('[LiveChat] Duplicate message, skipping');
+                            return prev;
+                        }
+                        console.log('[LiveChat] Adding message to chat');
                         return [...prev, msg];
                     });
                 }

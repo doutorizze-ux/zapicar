@@ -171,13 +171,26 @@ export class WhatsappService implements OnModuleInit {
             const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
             // const { version } = await fetchLatestBaileysVersion(); // Can be flaky
 
+            // Safe version fetch
+            let version = [2, 3000, 1015901307];
+            try {
+                const v = await fetchLatestBaileysVersion();
+                version = v.version;
+            } catch (e) {
+                this.logger.warn('Failed to fetch latest Baileys version, using default.');
+            }
+
             const sock = makeWASocket({
-                // version,
+                version: version as any,
                 logger: pino({ level: 'silent' }) as any,
                 printQRInTerminal: false,
-                auth: state,
-                browser: Browsers.macOS('Desktop'),
-                syncFullHistory: false
+                auth: {
+                    creds: state.creds,
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }) as any),
+                },
+                browser: ['ZapCar', 'Chrome', '1.0.0'],
+                syncFullHistory: false,
+                generateHighQualityLinkPreview: true,
             });
 
             this.clients.set(userId, sock);
@@ -228,9 +241,13 @@ export class WhatsappService implements OnModuleInit {
             sock.ev.on('messages.upsert', async (m) => {
                 if (m.type !== 'notify') return;
 
-                for (const msg of m.messages) {
-                    if (!msg.message) continue;
-                    await this.handleMessage(userId, msg, sock);
+                try {
+                    for (const msg of m.messages) {
+                        if (!msg.message) continue;
+                        await this.handleMessage(userId, msg, sock);
+                    }
+                } catch (e) {
+                    this.logger.error('Error processing message upsert', e);
                 }
             });
 

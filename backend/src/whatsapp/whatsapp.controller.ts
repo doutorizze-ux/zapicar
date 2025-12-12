@@ -47,11 +47,4 @@ export class WhatsappController {
         const isPaused = this.whatsappService.isBotPaused(req.user.userId);
         return { paused: isPaused };
     }
-
-    @UseGuards(JwtAuthGuard)
-    @Post('reset')
-    async resetConnection(@Request() req) {
-        await this.whatsappService.resetSession(req.user.userId);
-        return { success: true, message: 'Conexão resetada com sucesso. Aguarde o novo QR Code.' };
-    }
 }

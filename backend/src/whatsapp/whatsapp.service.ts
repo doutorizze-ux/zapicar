@@ -1,26 +1,41 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import { Client, LocalAuth, Message, MessageMedia } from 'whatsapp-web.js';
+import * as qrcode from 'qrcode-terminal';
+import { VehiclesService } from '../vehicles/vehicles.service';
+import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+
+import { ChatMessage } from './entities/chat-message.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ChatMessage } from './entities/chat-message.entity';
 import { UsersService } from '../users/users.service';
 import { FaqService } from '../faq/faq.service';
 import { LeadsService } from '../leads/leads.service';
-import { VehiclesService } from '../vehicles/vehicles.service';
 import { ChatGateway } from './chat.gateway';
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 
 @Injectable()
 export class WhatsappService implements OnModuleInit {
-    private readonly logger = new Logger(WhatsappService.name);
-    // Communication with Evolution API via docker internal network
-    private readonly EVOLUTION_URL = 'http://evolution:8080';
-    private readonly API_KEY = 'B8D69066-512E-4161-8C2A-4C2366881234';
-
+    // Map<userId, Client>
+    private clients: Map<string, Client> = new Map();
+    private qrCodes: Map<string, string> = new Map();
+    private statuses: Map<string, 'DISCONNECTED' | 'CONNECTED' | 'QR_READY'> = new Map();
+    private pausedUsers: Set<string> = new Set(); // New: Memory-based pause state
     private genAI: GoogleGenerativeAI;
     private model: GenerativeModel;
+
+    setBotPaused(userId: string, paused: boolean) {
+        if (paused) {
+            this.pausedUsers.add(userId);
+        } else {
+            this.pausedUsers.delete(userId);
+        }
+        console.log(`Bot for user ${userId} is now ${paused ? 'PAUSED' : 'ACTIVE'}`);
+    }
+
+    isBotPaused(userId: string): boolean {
+        return this.pausedUsers.has(userId);
+    }
 
     constructor(
         @InjectRepository(ChatMessage)
@@ -30,152 +45,10 @@ export class WhatsappService implements OnModuleInit {
         private usersService: UsersService,
         private faqService: FaqService,
         private leadsService: LeadsService,
-        private chatGateway: ChatGateway,
-        private readonly httpService: HttpService
+        private chatGateway: ChatGateway
     ) { }
 
-    onModuleInit() {
-        this.initializeAI();
-    }
-
-    private initializeAI() {
-        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-        if (apiKey) {
-            this.genAI = new GoogleGenerativeAI(apiKey);
-            this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        }
-    }
-
-    private getHeaders() {
-        return {
-            'Content-Type': 'application/json',
-            'apikey': this.API_KEY
-        };
-    }
-
-    // --- Session Management ---
-
-    async getSession(userId: string) {
-        try {
-            // Check connection state
-            const stateUrl = `${this.EVOLUTION_URL}/instance/connectionState/${userId}`;
-            let state = 'close';
-
-            try {
-                const stateRes = await firstValueFrom(this.httpService.get(stateUrl, { headers: this.getHeaders() }));
-                state = stateRes.data?.instance?.state || 'close';
-            } catch (e) {
-                // Instance might not exist
-            }
-
-            if (state === 'open') {
-                return { status: 'CONNECTED', qr: null };
-            }
-
-            // Create instance if needed
-            try {
-                await firstValueFrom(this.httpService.post(`${this.EVOLUTION_URL}/instance/create`, {
-                    instanceName: userId,
-                    token: userId,
-                    qrcode: true
-                }, { headers: this.getHeaders() }));
-            } catch (e) {
-                // Ignore if already exists
-            }
-
-            // Connect to get QR
-            const connectUrl = `${this.EVOLUTION_URL}/instance/connect/${userId}`;
-            const connectRes = await firstValueFrom(this.httpService.get(connectUrl, { headers: this.getHeaders() }));
-
-            if (connectRes.data?.base64) {
-                return { status: 'QR_READY', qr: connectRes.data.base64 };
-            }
-
-            return { status: 'DISCONNECTED', qr: null };
-
-        } catch (error) {
-            this.logger.error(`Error getting session for ${userId}`, error.message);
-            return { status: 'DISCONNECTED', qr: null };
-        }
-    }
-
-    async resetSession(userId: string) {
-        try {
-            this.logger.log(`Resetting session for ${userId}`);
-            await firstValueFrom(this.httpService.delete(`${this.EVOLUTION_URL}/instance/delete/${userId}`, { headers: this.getHeaders() }));
-            return { success: true };
-        } catch (error) {
-            this.logger.error(`Failed to reset session ${userId}`, error.message);
-            return { success: true };
-        }
-    }
-
-    setBotPaused(userId: string, paused: boolean) {
-        // TODO: Implement DB persistence
-    }
-
-    isBotPaused(userId: string): boolean {
-        return false;
-    }
-
-    // --- Messaging ---
-
-    async sendManualMessage(userId: string, to: string, message: string) {
-        try {
-            const jid = to.includes('@') ? to : `${to.replace(/\D/g, '')}@s.whatsapp.net`;
-            const number = jid.replace(/\D/g, ''); // Evolution usually takes just numbers for sendText
-
-            await firstValueFrom(this.httpService.post(`${this.EVOLUTION_URL}/message/sendText/${userId}`, {
-                number: number,
-                text: message
-            }, { headers: this.getHeaders() }));
-
-            // Log manually
-            this.logMessage(userId, jid, 'me', message, 'Atendente', true);
-
-        } catch (error) {
-            this.logger.error(`Failed to send message for ${userId}`, error.message);
-            throw new Error('Failed to send message via Evolution API');
-        }
-    }
-
-    // --- History & Analytics ---
-
-    async getChatHistory(storeId: string, contactId: string) {
-        return this.chatRepository.find({
-            where: { storeId, contactId },
-            order: { createdAt: 'ASC' }
-        });
-    }
-
-    async getRecentChats(storeId: string) {
-        const rawChats = await this.chatRepository
-            .createQueryBuilder("msg")
-            .select("msg.contactId", "id")
-            .addSelect("MAX(CASE WHEN msg.isBot = 0 AND msg.from != 'me' THEN msg.senderName ELSE NULL END)", "customerName")
-            .addSelect("MAX(msg.createdAt)", "lastTime")
-            .addSelect("MAX(CONCAT(msg.createdAt, '|||', msg.body))", "rawLastMessage")
-            .where("msg.storeId = :storeId", { storeId })
-            .groupBy("msg.contactId")
-            .orderBy("lastTime", "DESC")
-            .getRawMany();
-
-        return rawChats.map(chat => {
-            let body = '';
-            if (chat.rawLastMessage) {
-                const parts = chat.rawLastMessage.split('|||');
-                if (parts.length >= 2) body = parts.slice(1).join('|||');
-                else body = chat.rawLastMessage;
-            }
-            return {
-                id: chat.id,
-                name: chat.customerName || chat.id,
-                lastTime: chat.lastTime,
-                lastMessage: body
-            };
-        });
-    }
-
+    // Helper to log message
     private async logMessage(storeId: string, contactId: string, from: string, body: string, senderName: string, isBot: boolean) {
         try {
             await this.chatRepository.save({
@@ -187,7 +60,483 @@ export class WhatsappService implements OnModuleInit {
                 isBot
             });
         } catch (e) {
-            this.logger.error('Failed to log message', e);
+            console.error('Failed to log message', e);
+        }
+    }
+
+    // Helper to fetch history
+    async getChatHistory(storeId: string, contactId: string) {
+        return this.chatRepository.find({
+            where: { storeId, contactId },
+            order: { createdAt: 'ASC' }
+        });
+    }
+
+    async getRecentChats(storeId: string) {
+        // Fetch distinct contacts from message history
+        const rawChats = await this.chatRepository
+            .createQueryBuilder("msg")
+            .select("msg.contactId", "id")
+            // Logic to find the Customer's Name (ignore 'me' or 'bot' senderNames)
+            .addSelect("MAX(CASE WHEN msg.isBot = 0 AND msg.from != 'me' THEN msg.senderName ELSE NULL END)", "customerName")
+            .addSelect("MAX(msg.createdAt)", "lastTime")
+            // Get last message content via concatenation trick (Lexicographical MAX of ISO Date + Body works for "Last Message")
+            // We retrieve the full string and parse in JS to avoid SQL substing index guessing
+            .addSelect("MAX(CONCAT(msg.createdAt, '|||', msg.body))", "rawLastMessage")
+            .where("msg.storeId = :storeId", { storeId })
+            .groupBy("msg.contactId")
+            .orderBy("lastTime", "DESC")
+            .getRawMany();
+
+        return rawChats.map(chat => {
+            // Split "2025-12-11T...|||Hello World"
+            let body = '';
+            if (chat.rawLastMessage) {
+                const parts = chat.rawLastMessage.split('|||');
+                if (parts.length >= 2) {
+                    // Re-join just in case body contained '|||'
+                    body = parts.slice(1).join('|||');
+                } else {
+                    body = chat.rawLastMessage;
+                }
+            }
+
+            return {
+                id: chat.id,
+                name: chat.customerName || chat.id, // Fallback to number if no customer name found
+                lastTime: chat.lastTime,
+                lastMessage: body
+            };
+        });
+    }
+
+    onModuleInit() {
+        this.initializeAI();
+        this.cleanSimulationData();
+        this.restoreSessions();
+    }
+
+    private async cleanSimulationData() {
+        try {
+            await this.chatRepository.delete({ contactId: '5511999999999' });
+            await this.chatRepository.delete({ contactId: '5511999999999@c.us' });
+            console.log('Cleaned up simulation data artifacts.');
+        } catch (e) {
+            console.error('Failed to cleanup sim data', e);
+        }
+    }
+
+    private async restoreSessions() {
+        console.log('[Session Restore] Starting session restoration...');
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const fs = require('fs');
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const path = require('path');
+        const authPath = path.join(process.cwd(), '.wwebjs_auth');
+
+        console.log('[Session Restore] Looking for sessions in:', authPath);
+
+        if (fs.existsSync(authPath)) {
+            const files = fs.readdirSync(authPath);
+            console.log('[Session Restore] Found folders:', files);
+
+            for (const file of files) {
+                console.log('[Session Restore] Processing folder:', file);
+
+                if (file.startsWith('session-')) {
+                    // Extract userId from folder name
+                    // Expected format: session-store-{userId}
+                    const userId = file.replace('session-', '');
+
+                    console.log('[Session Restore] Extracted userId:', userId);
+
+                    // Validation
+                    if (userId && !userId.startsWith('session-') && !this.clients.has(userId)) {
+                        console.log(`[Session Restore] ✅ Restoring session for user: ${userId}`);
+                        this.initializeClient(userId);
+                        await new Promise(r => setTimeout(r, 1000));
+                    } else {
+                        console.log(`[Session Restore] ⏭️ Skipping folder ${file} - userId: ${userId}, already has client: ${this.clients.has(userId)}`);
+                    }
+                } else {
+                    console.log(`[Session Restore] ⏭️ Skipping non-session folder: ${file}`);
+                }
+            }
+
+            console.log('[Session Restore] Restoration complete. Active clients:', Array.from(this.clients.keys()));
+        } else {
+            console.log('[Session Restore] ⚠️ No .wwebjs_auth directory found. No sessions to restore.');
+        }
+    }
+
+    private initializeAI() {
+        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+        if (apiKey) {
+            this.genAI = new GoogleGenerativeAI(apiKey);
+            this.model = this.genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+        } else {
+            console.warn('GEMINI_API_KEY not found. AI features disabled.');
+        }
+    }
+
+    async getSession(userId: string) {
+        if (!this.clients.has(userId)) {
+            await this.initializeClient(userId);
+        }
+
+        return {
+            status: this.statuses.get(userId) || 'DISCONNECTED',
+            qr: this.qrCodes.get(userId) || null
+        };
+    }
+
+    private async initializeClient(userId: string) {
+        console.log(`Initializing WhatsApp Client for User: ${userId}`);
+
+        const client = new Client({
+            authStrategy: new LocalAuth({
+                clientId: `store-${userId}`
+            }),
+            puppeteer: {
+                headless: true,
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+            }
+        });
+
+        this.clients.set(userId, client);
+        this.statuses.set(userId, 'DISCONNECTED');
+
+        client.on('qr', (qr) => {
+            console.log(`QR RECEIVED caused by ${userId}`);
+            this.qrCodes.set(userId, qr);
+            this.statuses.set(userId, 'QR_READY');
+        });
+
+        client.on('ready', () => {
+            console.log(`WhatsApp Client for ${userId} is ready!`);
+            this.statuses.set(userId, 'CONNECTED');
+            this.qrCodes.delete(userId);
+        });
+
+        client.on('disconnected', () => {
+            console.log(`Client ${userId} disconnected`);
+            this.statuses.set(userId, 'DISCONNECTED');
+            this.qrCodes.delete(userId);
+            this.clients.delete(userId); // Cleanup
+        });
+
+        client.on('message', async (message: Message) => {
+            await this.handleMessage(message, userId);
+        });
+
+        try {
+            await client.initialize();
+        } catch (e) {
+            console.error(`Failed to initialize client for ${userId}`, e);
+        }
+    }
+
+    async sendManualMessage(userId: string, to: string, message: string) {
+        let client = this.clients.get(userId);
+        if (!client) {
+            console.log(`Client for ${userId} not found during manual send. Attempting to restore...`);
+            await this.initializeClient(userId);
+            client = this.clients.get(userId);
+            if (!client) {
+                throw new Error('WhatsApp client could not be initialized');
+            }
+            // Wait a bit for it to be ready? 
+            // Truly, we should wait for 'ready' event, but that's complex here. 
+            // For now, assuming if it initializes it might be usable or queueing.
+            // Actually, whatsapp-web.js throws if not ready.
+            // Let's just try-catch the send or hope it connects fast if session exists.
+        }
+
+        // Ensure number formatting (remove non-digits, add suffixes if needed)
+        // whatsapp-web.js usually expects '556299999999@c.us'
+        let chatId = to;
+        if (!chatId.includes('@c.us')) {
+            chatId = `${chatId.replace(/\D/g, '')}@c.us`;
+        }
+
+        try {
+            await client.sendMessage(chatId, message);
+        } catch (e) {
+            console.error('Error sending message (client might not be ready yet):', e);
+            throw new Error('Client not ready. Please wait a moment and try again.');
+        }
+
+        // Log manual message
+        this.logMessage(userId, to, 'me', message, 'Atendente', true);
+
+        // Emit to frontend so it appears in the chat UI immediately as 'me'
+        this.chatGateway.emitMessageToRoom(userId, {
+            id: 'manual-' + Date.now(),
+            from: 'me',
+            body: message,
+            timestamp: Date.now() / 1000,
+            senderName: 'Atendente',
+            isBot: true // or create a new flag isAgent? For now re-use isBot or check sender
+        });
+    }
+
+    private async handleMessage(message: Message, userId: string) {
+        // Clean ID (remove suffix) for consistency with Manual Messages
+        const cleanFrom = message.from.replace(/@c\.us|@g\.us/g, '');
+
+        // 0. Emit Incoming Message to Live Chat
+        try {
+            const contact = await message.getContact();
+            const contactName = contact.pushname || contact.name || cleanFrom;
+
+            // Log incoming
+            // Use cleanFrom so DB matches the 'to' format of manual messages
+            this.logMessage(userId, cleanFrom, cleanFrom, message.body, contactName, false);
+
+            this.chatGateway.emitMessageToRoom(userId, {
+                id: message.id.id,
+                from: cleanFrom, // Send clean ID found in DB
+                body: message.body,
+                timestamp: message.timestamp,
+                senderName: contactName,
+                isBot: false // Sent by customer
+            });
+        } catch (e) { console.error('Error emitting socket msg', e); }
+
+        const msg = message.body.toLowerCase();
+
+        try {
+            const contact = await message.getContact();
+            // Use cleanFrom for leads too
+            await this.leadsService.upsert(userId, cleanFrom, message.body, contact.pushname || contact.name);
+        } catch (e) {
+            console.error('Error tracking lead', e);
+        }
+
+        // Check if Bot is Paused for this user
+        if (this.isBotPaused(userId)) {
+            console.log(`Bot paused for ${userId}, skipping auto-reply.`);
+            return;
+        }
+
+        // 1. Get User Context
+        const user = await this.usersService.findById(userId);
+        const storeName = user?.storeName || "ZapCar";
+
+        // 2. Prepare Context
+        const allVehicles = await this.vehiclesService.findAll(userId);
+
+        // Strict Search for Fallback (classic logic)
+        const strictMatchVehicles = allVehicles.filter(v => {
+            const searchTerms = [v.name, v.brand, v.model, v.year?.toString()].map(t => t?.toLowerCase() || '');
+            return searchTerms.some(term => term && term.length > 2 && msg.includes(term));
+        });
+
+        // This variable is used by Fallback and Display logic
+        let contextVehicles = strictMatchVehicles;
+
+        // Context for AI (Broad - up to 50 items to allow fuzzy matching)
+        let aiContextVehicles = allVehicles;
+        if (aiContextVehicles.length > 50) {
+            aiContextVehicles = aiContextVehicles.slice(0, 50);
+        }
+
+        const ignoreTerms = ['bom', 'boa', 'tarde', 'noite', 'dia', 'ola', 'olá', 'tudo', 'bem', 'sim', 'não', 'quero'];
+        const isGeneric = ignoreTerms.includes(msg) || msg.length <= 3;
+
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        let shouldShowCars = false;
+        let responseText = '';
+
+        // 3. Fallback Logic Helper
+        const fallbackResponse = async (): Promise<string> => {
+            const greetings = ['oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'tudo bem', 'epa', 'opa'];
+
+            // Greeting handling
+            if (greetings.some(g => msg === g || (msg.includes(g) && msg.length < 10))) {
+                shouldShowCars = false;
+                return `Olá! 👋 Bem-vindo à *${storeName}*.\n\nSou seu assistente virtual. Digite o nome do carro que procura (ex: *Hilux*, *Civic*) ou digite *Estoque* para ver tudo.`;
+            }
+
+            if (msg.includes('endereço') || msg.includes('local') || msg.includes('onde fica')) {
+                shouldShowCars = false;
+                return `📍 Estamos localizados em: [Endereço da Loja].\nVenha nos visitar!`;
+            }
+
+            // Use Strict Matches (so we don't spam random cars if simple keyword match fails)
+            if (strictMatchVehicles.length > 0) {
+                // If we have strict matches, use them
+                contextVehicles = strictMatchVehicles;
+                shouldShowCars = true;
+                return `Encontrei ${strictMatchVehicles.length} opção(ões) que podem te interessar! 🚘\n\nVou te mandar as fotos e detalhes agora:`;
+            }
+
+            if (msg.includes('estoque') || msg.includes('catalogo') || msg.includes('catálogo')) {
+                // Show top 5 recent
+                contextVehicles = allVehicles.slice(0, 5);
+                shouldShowCars = true;
+                return `Claro! Aqui estão alguns destaques do nosso estoque atual:`;
+            }
+
+            shouldShowCars = false;
+            // Improved "Not Found" message
+            return `Poxa, procurei aqui e não encontrei nenhum carro com nome *"${message.body}"* no momento. 😕\n\nMas temos muitas outras opções! Digite *Estoque* para ver o que chegou.`;
+        };
+
+        // 4. Try FAQ Match First
+        const faqMatch = await this.faqService.findMatch(userId, msg);
+
+
+
+        if (faqMatch) {
+            responseText = faqMatch;
+            shouldShowCars = false;
+        } else if (this.model) {
+            try {
+                // AI uses the BROAD list
+                const params = aiContextVehicles.map(v =>
+                    `- ${v.brand} ${v.name} ${v.model} (${v.year})`
+                ).join('\n');
+
+                const prompt = `
+                Você é um consultor de vendas especialista da loja "${storeName}".
+                
+                ** Contexto **
+                Mensagem do Cliente: "${message.body}"
+                
+                ** Estoque Atual (Lista Completa) **
+                ${params}
+                (Se a lista estiver vazia, não temos carros no momento).
+
+                ** Missão **
+                Identificar se o cliente está buscando um carro específico que temos no estoque, mesmo que ele tenha digitado errado (ex: "corola" -> Corolla, "hylux" -> Hilux).
+                
+                ** Regras de Resposta **
+                1. Mantenha um tom profissional, amigável e direto. Use emojis moderadamente.
+                2. LEITURA DE INTENÇÃO:
+                   ** REGRAS DE COMPORTAMENTO **
+                   - SAUDAÇÃO (Oi, Olá, Tudo bem?): Responda apenas com cordialidade e pergunte qual modelo a pessoa procura. JAMAIS mostre lista de carros na saudação. Use a flag [NO_CARS].
+                   - BUSCA ESPECÍFICA: Se o cliente pediu explicitamente um carro (ex: "tem hilux?", "busco civic"), procure na lista acima.
+                     - DEU MATCH: Responda "Tenho sim! Aqui estão os detalhes:" e use a flag [SHOW_CARS].
+                     - NÃO DEU MATCH: Responda "Poxa, esse modelo exato eu não tenho agora. 😕 Mas tenho outras opções incríveis! Quer dar uma olhada no estoque?" e use a flag [NO_CARS] (só mostre se ele disser sim depois).
+                   - CURIOSIDADE ("Quero ver o estoque", "O que você tem?"): Responda "Claro! Separei uns destaques:" e use a flag [SHOW_CARS].
+                   
+                ** CONTROLE DE FLUXO (CRÍTICO) **
+                - Se for só "Oi" ou "Olá": Use [NO_CARS]
+                - Se perguntou preço de um carro da lista: Use [SHOW_CARS]
+                - Se o cliente não pediu carro nenhum: Use [NO_CARS]
+
+                ** Retorne apenas a resposta do bot seguida da flag. **
+                `;
+
+                const result = await this.model.generateContent(prompt);
+                const aiResponse = result.response.text();
+
+                // Explicitly check for SHOW_CARS, default to false logic essentially
+                if (aiResponse.includes('[SHOW_CARS]')) {
+                    shouldShowCars = true;
+                } else {
+                    shouldShowCars = false;
+                }
+
+                responseText = aiResponse.replace(/\[SHOW_CARS\]|\[NO_CARS\]/g, '').trim();
+
+            } catch (error) {
+                console.error('AI Failed, using fallback strategy', error);
+                responseText = await fallbackResponse();
+            }
+        } else {
+            responseText = await fallbackResponse();
+        }
+
+        // 5. Reply with Text
+        await message.reply(responseText);
+
+        // Log Bot Reply
+        this.logMessage(userId, message.from, 'bot', responseText, storeName + ' (Bot)', true);
+
+        // 5.5 Emit Bot Response to Live Chat
+        this.chatGateway.emitMessageToRoom(userId, {
+            id: 'bot-' + Date.now(),
+            from: 'bot',
+            body: responseText,
+            timestamp: Date.now() / 1000,
+            senderName: storeName + ' (Bot)',
+            isBot: true
+        });
+
+        // 6. Send Cars (Card + Images) Only if decided
+        const client = this.clients.get(userId);
+        if (!client || !shouldShowCars) return;
+
+        let vehiclesToShow = contextVehicles;
+        if (vehiclesToShow.length === 0) {
+            vehiclesToShow = allVehicles.slice(0, 3);
+        }
+
+        if (vehiclesToShow.length > 0) {
+            for (const car of vehiclesToShow.slice(0, 5)) {
+                const features: string[] = [];
+                if (car.trava) features.push('Trava');
+                if (car.alarme) features.push('Alarme');
+                if (car.som) features.push('Som');
+                if (car.teto) features.push('Teto Solar');
+                if (car.banco_couro) features.push('Banco de Couro');
+
+                const featuresText = features.length > 0 ? `✨ Opcionais: ${features.join(', ')}\n` : '';
+
+                const specs = `🔹 *${car.brand} ${car.name}* ${car.model || ''}
+📅 Ano: ${car.year} | 🚦 Km: ${car.km || 'N/A'}
+⛽ Combustível: ${car.fuel} | ⚙️ Câmbio: ${car.transmission}
+🎨 Cor: ${car.color}
+${featuresText}💰 *R$ ${Number(car.price).toLocaleString('pt-BR')}*
+
+_Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
+
+                await client.sendMessage(message.from, specs);
+
+                // Emit Car Specs to Chat
+                // Emit Car Specs to Chat
+                this.chatGateway.emitMessageToRoom(userId, {
+                    id: 'bot-car-' + car.id,
+                    from: 'bot',
+                    body: specs,
+                    timestamp: Date.now() / 1000,
+                    senderName: storeName + ' (Bot)',
+                    isBot: true
+                });
+
+                // Log Car Specs Sent
+                this.logMessage(userId, message.from, 'bot', specs, storeName + ' (Bot)', true);
+
+                await delay(800);
+
+                if (car.images && car.images.length > 0) {
+                    const imagesToSend = car.images.slice(0, 4);
+                    for (const imageUrl of imagesToSend) {
+                        try {
+                            if (!imageUrl) continue;
+                            let finalUrl = imageUrl;
+                            if (imageUrl.startsWith('/')) {
+                                const port = process.env.PORT || 3000;
+                                finalUrl = `http://localhost:${port}${imageUrl}`;
+                            }
+                            if (finalUrl.startsWith('http')) {
+                                const media = await MessageMedia.fromUrl(finalUrl);
+                                await client.sendMessage(message.from, media);
+                                await delay(1000);
+                            }
+                        } catch (e) {
+                            console.error(`Failed to send image for ${car.name}:`, e);
+                        }
+                    }
+                }
+
+                await delay(1500);
+                await client.sendMessage(message.from, '--------------------------------');
+                await delay(500);
+            }
         }
     }
 }

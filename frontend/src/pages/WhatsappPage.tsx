@@ -30,7 +30,6 @@ export function WhatsappPage() {
                 setLoading(false);
             } catch (error) {
                 console.error("Failed to fetch WhatsApp status", error);
-                // alert(`Erro de conexão com: ${API_URL}`); // Uncomment for debugging if needed
                 setLoading(false);
             }
         };
@@ -42,34 +41,9 @@ export function WhatsappPage() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-8">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold text-gray-900">Conexão WhatsApp</h2>
-                    <p className="text-gray-500 mt-1">Conecte seu número para ativar o chatbot.</p>
-                </div>
-                <button
-                    onClick={async () => {
-                        if (!confirm('Isso vai desconectar e resetar sua conexão atual. Tem certeza?')) return;
-                        try {
-                            setLoading(true);
-                            const token = localStorage.getItem('token');
-                            await fetch(`${API_URL}/whatsapp/reset`, {
-                                method: 'POST',
-                                headers: { 'Authorization': `Bearer ${token}` }
-                            });
-                            alert('Conexão resetada! Aguarde o novo QR Code.');
-                            setQrCode(null);
-                            setStatus('DISCONNECTED');
-                            setLoading(false);
-                        } catch (e) {
-                            alert('Erro ao resetar: ' + e);
-                            setLoading(false);
-                        }
-                    }}
-                    className="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 text-sm font-medium transition-colors"
-                >
-                    Resetar Conexão
-                </button>
+            <div>
+                <h2 className="text-3xl font-bold text-gray-900">Conexão WhatsApp</h2>
+                <p className="text-gray-500 mt-1">Conecte seu número para ativar o chatbot.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

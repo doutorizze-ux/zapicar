@@ -5,7 +5,7 @@ services:
     build: ./backend
     restart: always
     ports:
-      - "3002:3000"
+      - "3000:3000"
     environment:
       - PORT=3000
       - DATABASE_PATH=/app/data/zapcar.db
@@ -19,41 +19,17 @@ services:
       - zapcar_uploads:/app/uploads
       - whatsapp_session:/app/.wwebjs_auth
       - whatsapp_cache:/app/.wwebjs_cache
-      - ./backend/env:/app/.env
-    networks:
-      - zapcar_network
-
-  evolution:
-    image: atendai/evolution-api:v2.1.1
-    restart: always
-    ports:
-      - "8081:8080"
-    environment:
-      - SERVER_URL=http://localhost:8081
-      - AUTHENTICATION_API_KEY=B8D69066-512E-4161-8C2A-4C2366881234
-    volumes:
-      - evolution_store:/evolution/store
-    networks:
-      - zapcar_network
 
   frontend:
     build: ./frontend
     restart: always
     ports:
-      - "8082:80"
+      - "80:80"
     depends_on:
       - backend
-    networks:
-      - zapcar_network
 
 volumes:
   zapcar_data:
   zapcar_uploads:
   whatsapp_session:
   whatsapp_cache:
-  evolution_store:
-
-
-networks:
-  zapcar_network:
-    driver: bridge

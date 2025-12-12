@@ -30,6 +30,7 @@ export function WhatsappPage() {
                 setLoading(false);
             } catch (error) {
                 console.error("Failed to fetch WhatsApp status", error);
+                // alert(`Erro de conexão com: ${API_URL}`); // Uncomment for debugging if needed
                 setLoading(false);
             }
         };

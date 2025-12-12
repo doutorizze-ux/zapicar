@@ -499,6 +499,40 @@ _Gostou deste? Digite_ *"Quero o ${car.name} ${car.year}"*`;
         }
     }
 
+    async resetSession(userId: string) {
+        this.logger.warn(`Resetting session for user ${userId}...`);
+
+        // 1. Disconnect current socket if exists
+        const sock = this.clients.get(userId);
+        if (sock) {
+            try {
+                sock.end(new Error('Session Reset'));
+            } catch (e) { }
+            this.clients.delete(userId);
+        }
+
+        // 2. Clear clean states
+        this.statuses.delete(userId);
+        this.qrCodes.delete(userId);
+
+        // 3. Delete Session Files
+        const sessionPath = path.join(process.cwd(), '.baileys_auth', `session-${userId}`);
+        if (fs.existsSync(sessionPath)) {
+            try {
+                fs.rmSync(sessionPath, { recursive: true, force: true });
+                this.logger.log(`Deleted session files for ${userId}`);
+            } catch (e) {
+                this.logger.error(`Failed to delete session files: ${e.message}`);
+            }
+        }
+
+        // 4. Re-initialize
+        // Wait a bit to ensure file system release
+        setTimeout(() => this.initializeClient(userId), 1000); // 
+
+        return { success: true };
+    }
+
     private async logMessage(storeId: string, contactId: string, from: string, body: string, senderName: string, isBot: boolean) {
         try {
             await this.chatRepository.save({

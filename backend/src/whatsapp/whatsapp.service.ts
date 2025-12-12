@@ -193,17 +193,14 @@ export class WhatsappService implements OnModuleInit {
                 instanceName: instanceName,
                 token: instanceName, // Using instance name as token for simplicity or generate one
                 qrcode: true,
-                integration: 'WHATSAPP-BAILEYS', // Explicitly setting for v2 if needed, or remove if "Invalid integration" persists. 
-                // Trying WITHOUT integration first as per error "Invalid integration" usually means the string is wrong or not needed for default.
-                // Actually, the error in logs showed "Invalid integration" when I assumed it was sent.
-                // Let's rely on default.
+                integration: 'WHATSAPP-BAILEYS',
             };
 
             await axios.post(`${this.evolutionUrl}/instance/create`, {
                 instanceName: instanceName,
                 token: instanceName,
                 qrcode: true,
-                // integration: 'WHATSAPP-BAILEYS', // REMOVED CAUSE OF ERROR
+                integration: 'WHATSAPP-BAILEYS', // Force explicit integration type
                 webhook: this.configService.get('WEBHOOK_URL') ? {
                     enabled: true,
                     url: this.configService.get('WEBHOOK_URL'),

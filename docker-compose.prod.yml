@@ -31,6 +31,13 @@ services:
     environment:
       - SERVER_URL=http://localhost:8081
       - AUTHENTICATION_API_KEY=B8D69066-512E-4161-8C2A-4C2366881234
+      - DATABASE_PROVIDER=local
+      - DATABASE_CONNECTION_URI=evolution
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_CHATS=false
+      - DATABASE_SAVE_DATA_MESSAGES=false
+      - DATABASE_SAVE_MESSAGE_UPDATE=false
+      - DATABASE_SAVE_DATA_CONTACTS=false
     volumes:
       - evolution_store:/evolution/store
     networks:

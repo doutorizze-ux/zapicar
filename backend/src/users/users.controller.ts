@@ -67,6 +67,7 @@ export class UsersController {
     }
 
     @UseGuards(JwtAuthGuard, RolesGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @Patch(':id')
     async updateUser(@Param('id') id: string, @Body() body: any) {

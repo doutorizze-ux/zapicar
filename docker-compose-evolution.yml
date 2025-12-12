@@ -1,34 +1,6 @@
 version: '3.8'
 
 services:
-  backend:
-    build: ./backend
-    restart: always
-    ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
-      - DATABASE_PATH=/app/data/zapcar.db
-      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-this}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - ASAAS_API_KEY=${ASAAS_API_KEY}
-      - ASAAS_API_URL=${ASAAS_API_URL}
-      - EVOLUTION_API_URL=http://evolution-api:8080
-      - EVOLUTION_API_KEY=429683C4C977415CAAFCCE10F7D57E11
-    depends_on:
-      - evolution-api
-    volumes:
-      - zapcar_data:/app/data
-      - zapcar_uploads:/app/uploads
-
-  frontend:
-    build: ./frontend
-    restart: always
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-
   evolution-api:
     image: atendai/evolution-api:v2.2.0
     restart: always
@@ -36,16 +8,21 @@ services:
       - "8081:8080"
     environment:
       - SERVER_PORT=8080
-      - SERVER_URL=http://evolution-api:8080
+      - SERVER_URL=http://localhost:8081
       - AUTHENTICATION_API_KEY=429683C4C977415CAAFCCE10F7D57E11
       - AUTHENTICATION_EXPOSE_IN_NAVIGATION=true
+
+      # Database
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://evolution:evolution@postgres:5432/evolution
       - DATABASE_CLIENT_NAME=evolution_exchange
+
+      # Redis (optional but good for caching/queues if v2 uses it)
       - REDIS_ENABLED=true
       - REDIS_URI=redis://redis:6379/1
       - REDIS_PREFIX_KEY=evolution
+
     depends_on:
       - postgres
       - redis
@@ -70,8 +47,6 @@ services:
       - evolution_redis:/data
 
 volumes:
-  zapcar_data:
-  zapcar_uploads:
   evolution_instances:
   evolution_store:
   evolution_postgres:

@@ -47,4 +47,10 @@ export class WhatsappController {
         const isPaused = this.whatsappService.isBotPaused(req.user.userId);
         return { paused: isPaused };
     }
+
+    @Post('webhook')
+    async handleWebhook(@Body() payload: any) {
+        await this.whatsappService.handleWebhook(payload);
+        return { status: 'ok' };
+    }
 }

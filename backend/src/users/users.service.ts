@@ -16,13 +16,19 @@ export class UsersService implements OnModuleInit {
         await this.seedAdmin();
     }
 
-    async seedAdmin() {
+    async seedAdmin(force = false) {
         const adminEmail = 'admin@zapicar.com.br';
-        const adminExists = await this.usersRepository.findOne({ where: { email: adminEmail } });
+        const adminUser = await this.usersRepository.findOne({ where: { email: adminEmail } });
 
-        if (!adminExists) {
+        if (!adminUser) {
             console.log('Seeding default admin user...');
             await this.create(adminEmail, 'Asd@080782', 'ZapCar Admin', UserRole.ADMIN);
+        } else if (force) {
+            console.log('Forcing Admin Password Reset...');
+            const salt = await bcrypt.genSalt();
+            const passwordHash = await bcrypt.hash('admin', salt);
+            await this.usersRepository.update({ email: adminEmail }, { passwordHash });
+            return { success: true, message: 'Admin password reset to: admin' };
         }
     }
 

@@ -90,6 +90,7 @@ export class WhatsappService implements OnModuleInit {
     onModuleInit() {
         this.initializeAI();
         this.cleanSimulationData();
+        this.restoreSessions();
     }
 
     private async cleanSimulationData() {
@@ -99,6 +100,36 @@ export class WhatsappService implements OnModuleInit {
             console.log('Cleaned up simulation data artifacts.');
         } catch (e) {
             console.error('Failed to cleanup sim data', e);
+        }
+    }
+
+    private async restoreSessions() {
+        console.log('Restoring WhatsApp sessions...');
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const fs = require('fs');
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const path = require('path');
+        const authPath = path.join(process.cwd(), '.wwebjs_auth');
+
+        if (fs.existsSync(authPath)) {
+            const files = fs.readdirSync(authPath);
+            for (const file of files) {
+                if (file.startsWith('session-store-')) {
+                    // Folder name: session-store-{clientId}
+                    // clientId: store-{userId}
+                    // So Folder: session-store-store-{userId}
+                    const userId = file.replace('session-store-store-', '');
+
+                    if (userId && !this.clients.has(userId)) {
+                        console.log(`Found session for ${userId}, restoring...`);
+                        this.initializeClient(userId);
+                        // Add a small delay to prevent CPU spike if many sessions
+                        await new Promise(r => setTimeout(r, 2000));
+                    }
+                }
+            }
+        } else {
+            console.log('No existing sessions to restore.');
         }
     }
 
@@ -170,9 +201,19 @@ export class WhatsappService implements OnModuleInit {
     }
 
     async sendManualMessage(userId: string, to: string, message: string) {
-        const client = this.clients.get(userId);
+        let client = this.clients.get(userId);
         if (!client) {
-            throw new Error('WhatsApp client not connected');
+            console.log(`Client for ${userId} not found during manual send. Attempting to restore...`);
+            await this.initializeClient(userId);
+            client = this.clients.get(userId);
+            if (!client) {
+                throw new Error('WhatsApp client could not be initialized');
+            }
+            // Wait a bit for it to be ready? 
+            // Truly, we should wait for 'ready' event, but that's complex here. 
+            // For now, assuming if it initializes it might be usable or queueing.
+            // Actually, whatsapp-web.js throws if not ready.
+            // Let's just try-catch the send or hope it connects fast if session exists.
         }
 
         // Ensure number formatting (remove non-digits, add suffixes if needed)
@@ -182,7 +223,12 @@ export class WhatsappService implements OnModuleInit {
             chatId = `${chatId.replace(/\D/g, '')}@c.us`;
         }
 
-        await client.sendMessage(chatId, message);
+        try {
+            await client.sendMessage(chatId, message);
+        } catch (e) {
+            console.error('Error sending message (client might not be ready yet):', e);
+            throw new Error('Client not ready. Please wait a moment and try again.');
+        }
 
         // Log manual message
         this.logMessage(userId, to, 'me', message, 'Atendente', true);

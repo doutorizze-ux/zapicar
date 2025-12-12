@@ -190,7 +190,6 @@ export class WhatsappService implements OnModuleInit {
                     this.logger.log(`QR Code received for ${userId}`);
                     this.qrCodes.set(userId, qr);
                     this.statuses.set(userId, 'QR_READY');
-                    // Could emit global event if needed
                 }
 
                 if (connection === 'close') {
@@ -201,12 +200,21 @@ export class WhatsappService implements OnModuleInit {
                     this.qrCodes.delete(userId);
 
                     if (shouldReconnect) {
-                        // Retry with delay
-                        setTimeout(() => this.initializeClient(userId), 2000);
+                        // Retry with increased delay
+                        setTimeout(() => this.initializeClient(userId), 5000);
                     } else {
                         this.logger.log(`User ${userId} logged out.`);
                         this.clients.delete(userId);
-                        // Optionally clean up session folder
+
+                        // Clean up session folder
+                        try {
+                            const sessionDir = path.join(process.cwd(), '.baileys_auth', `session-${userId}`);
+                            if (fs.existsSync(sessionDir)) {
+                                fs.rmSync(sessionDir, { recursive: true, force: true });
+                            }
+                        } catch (e) {
+                            this.logger.error(`Error cleaning up session for ${userId}`, e);
+                        }
                     }
                 } else if (connection === 'open') {
                     this.logger.log(`Connection opened for ${userId}`);

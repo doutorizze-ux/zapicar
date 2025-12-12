@@ -15,6 +15,18 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
   // Listen on 0.0.0.0 to accept connections from outside the container
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  const port = process.env.PORT ?? 3000;
+  try {
+    await app.listen(port, '0.0.0.0');
+    console.log(`Application is running on: ${await app.getUrl()}`);
+  } catch (err) {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`Port ${port} is busy, trying port 3001...`);
+      await app.listen(3001, '0.0.0.0');
+      console.log(`Application is running on: ${await app.getUrl()}`);
+    } else {
+      throw err;
+    }
+  }
 }
 bootstrap();

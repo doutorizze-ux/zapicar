@@ -237,20 +237,16 @@ export class WhatsappService implements OnModuleInit {
         const storeName = user?.storeName || "ZapCar";
 
         // 2. Prepare Context (Smarter Search)
-        // 2. Prepare Context (Smarter Strategy)
+        // 2. Prepare Context
         const allVehicles = await this.vehiclesService.findAll(userId);
+        // Optimization: Pass up to 50 vehicles to the AI and let it decide matches/typos.
+        // The previous strict filter was too aggressive (requiring full name match).
         let contextVehicles = allVehicles;
-
-        // Optimization: If inventory is huge, we might overwhelm the AI prompt.
-        // But for < 50 cars, sending all is better for intelligence (typo correction).
-        // If > 50, we implement a lightweight fuzzy filter or just slice.
-        // 2. Prepare Context (Strict Search)
-        // Only include vehicles that actually match terms in the message
-        contextVehicles = allVehicles.filter(v => {
-            const searchTerms = [v.name, v.brand, v.model, v.year?.toString()].map(t => t?.toLowerCase() || '');
-            // Check if any car term appears in the user message
-            return searchTerms.some(term => term && term.length > 2 && msg.includes(term));
-        });
+        if (contextVehicles.length > 50) {
+            // Simple heuristic: if too many cars, try a very loose filter or just take top 50 recent
+            // For now, slicing top 50 to avoid token limit issues while keeping it smart.
+            contextVehicles = contextVehicles.slice(0, 50);
+        }
 
         const ignoreTerms = ['bom', 'boa', 'tarde', 'noite', 'dia', 'ola', 'olá', 'tudo', 'bem', 'sim', 'não', 'quero'];
         const isGeneric = ignoreTerms.includes(msg) || msg.length <= 3;

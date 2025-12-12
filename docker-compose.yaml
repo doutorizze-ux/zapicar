@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATABASE_PATH=/app/data/zapcar.db
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-this}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ASAAS_API_KEY=${ASAAS_API_KEY}
+      - ASAAS_API_URL=${ASAAS_API_URL}
+    volumes:
+      # Use named volumes for persistence across deployments
+      - zapcar_data:/app/data
+      - zapcar_uploads:/app/uploads
+      - whatsapp_session:/app/.wwebjs_auth
+      - whatsapp_cache:/app/.wwebjs_cache
+
+  frontend:
+    build: ./frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  zapcar_data:
+  zapcar_uploads:
+  whatsapp_session:
+  whatsapp_cache:

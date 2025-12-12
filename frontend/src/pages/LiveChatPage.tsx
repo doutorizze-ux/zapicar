@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { API_URL } from '../config';
 import { MessageSquare, Send, User, PauseCircle, PlayCircle, Smartphone } from 'lucide-react';
 
@@ -21,7 +21,6 @@ interface Contact {
 }
 
 export function LiveChatPage() {
-    const [socket, setSocket] = useState<Socket | null>(null);
     const [activeContactId, setActiveContactId] = useState<string | null>(null);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
@@ -177,8 +176,6 @@ export function LiveChatPage() {
                 return [...prev, msg];
             });
         });
-
-        setSocket(newSocket);
         return () => {
             console.log('[LiveChat] Disconnecting socket');
             newSocket.disconnect();
@@ -302,8 +299,8 @@ export function LiveChatPage() {
                             return (
                                 <div key={msg.id} className={`flex ${isFromBot ? 'justify-end' : 'justify-start'} relative z-10`}>
                                     <div className={`max-w-[70%] rounded-lg p-3 shadow-sm text-sm ${isFromBot
-                                            ? 'bg-[#d9fdd3] text-gray-800 rounded-tr-none'
-                                            : 'bg-white text-gray-800 rounded-tl-none'
+                                        ? 'bg-[#d9fdd3] text-gray-800 rounded-tr-none'
+                                        : 'bg-white text-gray-800 rounded-tl-none'
                                         }`}>
                                         <p className={`text-xs font-bold mb-1 ${isFromBot ? 'text-gray-500' : 'text-orange-600'}`}>
                                             {msg.senderName || (isFromBot ? 'Atendente' : 'Cliente')}

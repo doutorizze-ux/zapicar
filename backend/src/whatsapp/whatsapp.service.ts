@@ -268,17 +268,21 @@ export class WhatsappService implements OnModuleInit {
     }
 
     private async handleMessage(message: Message, userId: string) {
+        // Clean ID (remove suffix) for consistency with Manual Messages
+        const cleanFrom = message.from.replace(/@c\.us|@g\.us/g, '');
+
         // 0. Emit Incoming Message to Live Chat
         try {
             const contact = await message.getContact();
-            const contactName = contact.pushname || contact.name || message.from;
+            const contactName = contact.pushname || contact.name || cleanFrom;
 
             // Log incoming
-            this.logMessage(userId, message.from, message.from, message.body, contactName, false);
+            // Use cleanFrom so DB matches the 'to' format of manual messages
+            this.logMessage(userId, cleanFrom, cleanFrom, message.body, contactName, false);
 
             this.chatGateway.emitMessageToRoom(userId, {
                 id: message.id.id,
-                from: message.from,
+                from: cleanFrom, // Send clean ID found in DB
                 body: message.body,
                 timestamp: message.timestamp,
                 senderName: contactName,
@@ -290,7 +294,8 @@ export class WhatsappService implements OnModuleInit {
 
         try {
             const contact = await message.getContact();
-            await this.leadsService.upsert(userId, message.from, message.body, contact.pushname || contact.name);
+            // Use cleanFrom for leads too
+            await this.leadsService.upsert(userId, cleanFrom, message.body, contact.pushname || contact.name);
         } catch (e) {
             console.error('Error tracking lead', e);
         }

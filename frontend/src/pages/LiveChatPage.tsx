@@ -13,7 +13,7 @@ interface ChatMessage {
 }
 
 interface Contact {
-    id: string; // Phone number or remoteJid
+    id: string;
     name: string;
     lastMessage?: string;
     lastTime?: number;
@@ -21,24 +21,20 @@ interface Contact {
 }
 
 export function LiveChatPage() {
-    const [, setSocket] = useState<Socket | null>(null);
+    const [socket, setSocket] = useState<Socket | null>(null);
     const [activeContactId, setActiveContactId] = useState<string | null>(null);
-    const [messages, setMessages] = useState<ChatMessage[]>([]); // Current Chat Messages Only
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [isConnected, setIsConnected] = useState(false);
     const [botPaused, setBotPaused] = useState(false);
     const [inputText, setInputText] = useState('');
     const [sending, setSending] = useState(false);
 
-    // Ref needed for Socket event listener to know which chat is open
-    const activeContactIdRef = useRef(activeContactId);
-    useEffect(() => { activeContactIdRef.current = activeContactId; }, [activeContactId]);
-
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); };
     useEffect(() => { scrollToBottom(); }, [messages]);
 
-    // 1. Initial Data Fetch (Contacts & Status)
+    // Fetch contacts on mount
     useEffect(() => {
         fetchContacts();
         fetchPauseStatus();
@@ -48,7 +44,9 @@ export function LiveChatPage() {
         const token = localStorage.getItem('token');
         if (!token) return;
         try {
-            const res = await fetch(`${API_URL}/whatsapp/chats`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(`${API_URL}/whatsapp/chats`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (res.ok) {
                 const data = await res.json();
                 if (Array.isArray(data)) {
@@ -68,15 +66,19 @@ export function LiveChatPage() {
         const token = localStorage.getItem('token');
         if (!token) return;
         try {
-            const res = await fetch(`${API_URL}/whatsapp/pause-status`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(`${API_URL}/whatsapp/pause-status`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             if (res.ok) setBotPaused((await res.json()).paused);
         } catch (e) { }
     };
 
-    // 2. Chat History Fetch (When clicking a contact)
+    // Load chat history when contact is selected
     useEffect(() => {
-        if (!activeContactId) return;
-        setMessages([]); // Clear view first
+        if (!activeContactId) {
+            setMessages([]);
+            return;
+        }
 
         const fetchHistory = async () => {
             const token = localStorage.getItem('token');
@@ -86,10 +88,10 @@ export function LiveChatPage() {
                 });
                 if (res.ok) {
                     const history = await res.json();
-                    console.log('[LiveChat] Loaded history for', activeContactId, ':', history.length, 'messages');
+                    console.log('[LiveChat] Loaded history:', history);
                     setMessages(history.map((h: any) => ({
                         id: h.id,
-                        from: h.from, // Use h.from directly - it's already clean
+                        from: h.from,
                         body: h.body,
                         timestamp: new Date(h.createdAt).getTime() / 1000,
                         senderName: h.senderName,
@@ -101,9 +103,8 @@ export function LiveChatPage() {
         fetchHistory();
     }, [activeContactId]);
 
-    // 3. Socket Connection & Events
+    // WebSocket connection
     useEffect(() => {
-        // Calculate correct Socket URL (Origin or /api stripped)
         let socketUrl = API_URL;
         if (socketUrl.startsWith('/')) {
             socketUrl = window.location.origin;
@@ -111,82 +112,77 @@ export function LiveChatPage() {
             socketUrl = socketUrl.replace('/api', '');
         }
 
-        const newSocket = io(socketUrl, { path: '/socket.io', transports: ['websocket', 'polling'] });
+        const newSocket = io(socketUrl, {
+            path: '/socket.io',
+            transports: ['websocket', 'polling']
+        });
 
         newSocket.on('connect', () => {
-            console.log('Socket Connected');
+            console.log('[LiveChat] Socket Connected');
             setIsConnected(true);
             const token = localStorage.getItem('token');
             if (token) {
-                // Join Room using profile ID
-                fetch(`${API_URL}/users/profile`, { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`${API_URL}/users/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
                     .then(r => r.json())
-                    .then(user => newSocket.emit('join_room', { userId: user.id }));
+                    .then(user => {
+                        console.log('[LiveChat] Joining room:', user.id);
+                        newSocket.emit('join_room', { userId: user.id });
+                    });
             }
         });
 
-        newSocket.on('disconnect', () => setIsConnected(false));
+        newSocket.on('disconnect', () => {
+            console.log('[LiveChat] Socket Disconnected');
+            setIsConnected(false);
+        });
 
         newSocket.on('new_message', (rawMsg: ChatMessage) => {
+            console.log('[LiveChat] New message received:', rawMsg);
+
+            // Clean the phone number
             const cleanFrom = rawMsg.from.replace(/@c\.us|@g\.us/g, '');
             const msg = { ...rawMsg, from: cleanFrom };
 
-            console.log('[LiveChat] Received message:', {
-                from: msg.from,
-                isBot: msg.isBot,
-                body: msg.body.substring(0, 50),
-                activeContact: activeContactIdRef.current
-            });
-
-            // 3.1. Update Contact List (Move to top or Add)
+            // Update contacts list
             setContacts(prev => {
-                const partnerId = (msg.isBot || msg.from === 'me') ? activeContactIdRef.current : cleanFrom;
-                if (!partnerId) return prev; // Cant determine contact for outbound if not active
+                // For bot messages, we don't know which contact unless we track it
+                // For customer messages, use the from field
+                const contactId = msg.isBot ? activeContactId : cleanFrom;
+                if (!contactId) return prev;
 
-                const exists = prev.find(c => c.id === partnerId);
+                const exists = prev.find(c => c.id === contactId);
                 const updatedContact = {
-                    id: partnerId,
-                    name: exists ? exists.name : (msg.senderName || partnerId),
+                    id: contactId,
+                    name: exists ? exists.name : (msg.senderName || contactId),
                     lastMessage: msg.body,
                     lastTime: msg.timestamp,
-                    unread: (activeContactIdRef.current === partnerId) ? 0 : ((exists?.unread || 0) + 1)
+                    unread: 0
                 };
 
-                const others = prev.filter(c => c.id !== partnerId);
+                const others = prev.filter(c => c.id !== contactId);
                 return [updatedContact, ...others];
             });
 
-            // 3.2. If this message belongs to the OPEN chat, append it
-            if (activeContactIdRef.current) {
-                // Customer message: from matches the open contact
-                const isCustomerMessage = msg.from === activeContactIdRef.current && !msg.isBot;
-
-                // Bot/Agent message: it's a bot message and we have a chat open
-                // (we assume bot messages in real-time are for the active conversation)
-                const isBotMessage = (msg.from === 'me' || msg.from === 'bot' || msg.isBot);
-
-                console.log('[LiveChat] Message filter:', {
-                    isCustomerMessage,
-                    isBotMessage,
-                    willAdd: isCustomerMessage || isBotMessage
-                });
-
-                if (isCustomerMessage || isBotMessage) {
-                    setMessages(prev => {
-                        // Avoid duplicates
-                        if (prev.find(m => m.id === msg.id)) {
-                            console.log('[LiveChat] Duplicate message, skipping');
-                            return prev;
-                        }
-                        console.log('[LiveChat] Adding message to chat');
-                        return [...prev, msg];
-                    });
+            // Add to messages if this chat is open
+            setMessages(prev => {
+                // Avoid duplicates
+                if (prev.find(m => m.id === msg.id)) {
+                    console.log('[LiveChat] Duplicate message, ignoring');
+                    return prev;
                 }
-            }
+
+                console.log('[LiveChat] Adding message to list');
+                return [...prev, msg];
+            });
         });
 
         setSocket(newSocket);
-        return () => { newSocket.disconnect(); };
+        return () => {
+            console.log('[LiveChat] Disconnecting socket');
+            newSocket.disconnect();
+        };
     }, []);
 
     const handleSendMessage = async () => {
@@ -196,11 +192,13 @@ export function LiveChatPage() {
             const token = localStorage.getItem('token');
             await fetch(`${API_URL}/whatsapp/send`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({ to: activeContactId, message: inputText })
             });
             setInputText('');
-            // We rely on socket to append the message to view
         } catch (e) {
             alert('Erro ao enviar');
         } finally {
@@ -216,22 +214,28 @@ export function LiveChatPage() {
                     <h2 className="font-bold text-gray-700 flex items-center gap-2">
                         <MessageSquare className="w-5 h-5 text-green-600" /> Conversas
                     </h2>
-                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} title={isConnected ? 'Online' : 'Offline'}></div>
+                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                        title={isConnected ? 'Online' : 'Offline'}></div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     {contacts.length === 0 ? (
                         <div className="p-8 text-center text-gray-400 text-sm">Nenhuma conversa encontrada.</div>
                     ) : (
                         contacts.map(contact => (
-                            <div key={contact.id} onClick={() => setActiveContactId(contact.id)}
-                                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-white transition-colors ${activeContactId === contact.id ? 'bg-white border-l-4 border-l-green-500 shadow-sm' : ''}`}>
+                            <div key={contact.id}
+                                onClick={() => setActiveContactId(contact.id)}
+                                className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-white transition-colors ${activeContactId === contact.id ? 'bg-white border-l-4 border-l-green-500 shadow-sm' : ''
+                                    }`}>
                                 <div className="flex justify-between mb-1">
                                     <span className="font-bold text-gray-800 truncate max-w-[140px]">{contact.name}</span>
-                                    {contact.lastTime && <span className="text-[10px] text-gray-400">{new Date(contact.lastTime * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+                                    {contact.lastTime && (
+                                        <span className="text-[10px] text-gray-400">
+                                            {new Date(contact.lastTime * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <p className="text-sm text-gray-500 truncate max-w-[180px]">{contact.lastMessage || '...'}</p>
-                                    {!!contact.unread && <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{contact.unread}</span>}
                                 </div>
                             </div>
                         ))
@@ -250,25 +254,32 @@ export function LiveChatPage() {
                                     {contacts.find(c => c.id === activeContactId)?.name?.charAt(0) || <User />}
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-gray-800">{contacts.find(c => c.id === activeContactId)?.name || activeContactId}</h3>
-                                    <p className="text-xs text-green-600 flex items-center gap-1"><Smartphone className="w-3 h-3" /> WhatsApp Web</p>
+                                    <h3 className="font-bold text-gray-800">
+                                        {contacts.find(c => c.id === activeContactId)?.name || activeContactId}
+                                    </h3>
+                                    <p className="text-xs text-green-600 flex items-center gap-1">
+                                        <Smartphone className="w-3 h-3" /> WhatsApp Web
+                                    </p>
                                 </div>
                             </>
                         ) : <h3 className="text-gray-500 italic">Selecione uma conversa</h3>}
                     </div>
                     <div className="flex items-center gap-2">
-                        {/* Pause Button */}
                         <button onClick={async () => {
                             const newState = !botPaused;
                             const token = localStorage.getItem('token');
                             await fetch(`${API_URL}/whatsapp/pause`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
                                 body: JSON.stringify({ paused: newState })
                             });
                             setBotPaused(newState);
                         }}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${botPaused ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${botPaused ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}>
                             {botPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
                             {botPaused ? 'RETOMAR IA' : 'PAUSAR IA'}
                         </button>
@@ -284,19 +295,27 @@ export function LiveChatPage() {
                             <p>Selecione um contato para monitorar.</p>
                         </div>
                     ) : (
-                        messages.map((msg) => (
-                            <div key={msg.id} className={`flex ${msg.isBot || msg.from === 'me' ? 'justify-end' : 'justify-start'} relative z-10`}>
-                                <div className={`max-w-[70%] rounded-lg p-3 shadow-sm text-sm ${msg.isBot || msg.from === 'me' ? 'bg-[#d9fdd3] text-gray-800 rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none'}`}>
-                                    <p className={`text-xs font-bold mb-1 ${msg.isBot ? 'text-gray-500' : 'text-orange-600'}`}>
-                                        {msg.senderName || (msg.from === 'me' ? 'Atendente' : 'Cliente')}
-                                    </p>
-                                    <p className="whitespace-pre-wrap leading-relaxed">{msg.body}</p>
-                                    <span className="text-[10px] text-gray-400 block text-right mt-1">
-                                        {new Date(msg.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+                        messages.map((msg) => {
+                            // Message is from bot/agent if isBot is true OR from is 'me' or 'bot'
+                            const isFromBot = msg.isBot || msg.from === 'me' || msg.from === 'bot';
+
+                            return (
+                                <div key={msg.id} className={`flex ${isFromBot ? 'justify-end' : 'justify-start'} relative z-10`}>
+                                    <div className={`max-w-[70%] rounded-lg p-3 shadow-sm text-sm ${isFromBot
+                                            ? 'bg-[#d9fdd3] text-gray-800 rounded-tr-none'
+                                            : 'bg-white text-gray-800 rounded-tl-none'
+                                        }`}>
+                                        <p className={`text-xs font-bold mb-1 ${isFromBot ? 'text-gray-500' : 'text-orange-600'}`}>
+                                            {msg.senderName || (isFromBot ? 'Atendente' : 'Cliente')}
+                                        </p>
+                                        <p className="whitespace-pre-wrap leading-relaxed">{msg.body}</p>
+                                        <span className="text-[10px] text-gray-400 block text-right mt-1">
+                                            {new Date(msg.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                     <div ref={messagesEndRef} />
                 </div>
@@ -313,7 +332,8 @@ export function LiveChatPage() {
                             placeholder="Digite uma mensagem..."
                             className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-200"
                         />
-                        <button onClick={handleSendMessage} disabled={!activeContactId || sending || !inputText.trim()}
+                        <button onClick={handleSendMessage}
+                            disabled={!activeContactId || sending || !inputText.trim()}
                             className="bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-all">
                             <Send className="w-5 h-5" />
                         </button>

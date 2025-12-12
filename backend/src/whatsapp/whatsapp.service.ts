@@ -188,25 +188,15 @@ export class WhatsappService implements OnModuleInit {
         try {
             this.logger.log(`Creating instance for ${userId}`);
 
-            // v2 Payload Structure
+            // v1.8.2 Payload Structure (Stable)
             const payload = {
-                instanceName: instanceName,
-                token: instanceName, // Using instance name as token for simplicity or generate one
-                qrcode: true,
-                integration: 'WHATSAPP-BAILEYS',
-            };
-
-            await axios.post(`${this.evolutionUrl}/instance/create`, {
                 instanceName: instanceName,
                 token: instanceName,
                 qrcode: true,
-                integration: 'WHATSAPP-BAILEYS', // Force explicit integration type
-                webhook: this.configService.get('WEBHOOK_URL') ? {
-                    enabled: true,
-                    url: this.configService.get('WEBHOOK_URL'),
-                    events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE']
-                } : undefined
-            }, { headers: this.getHeaders() });
+                webhook: this.configService.get('WEBHOOK_URL') || undefined
+            };
+
+            await axios.post(`${this.evolutionUrl}/instance/create`, payload, { headers: this.getHeaders() });
 
         } catch (e) {
             this.logger.error(`Failed to create instance for ${userId}`, e.response?.data || e.message);

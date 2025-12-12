@@ -158,6 +158,8 @@ export class WhatsappService implements OnModuleInit {
 
             if (state === 'open') {
                 this.statuses.set(userId, 'CONNECTED');
+                // Ensure webhook is set for v1.8.2 stability
+                await this.ensureWebhook(userId);
                 return { status: 'CONNECTED', qr: null };
             } else if (state === 'connecting') {
                 // Try to fetch QR
@@ -212,6 +214,29 @@ export class WhatsappService implements OnModuleInit {
             this.qrCodes.delete(userId);
         } catch (e) {
             this.logger.error(`Failed to delete instance for ${userId}`, e.response?.data || e.message);
+        }
+    }
+
+    private async ensureWebhook(userId: string) {
+        const instanceName = this.getInstanceName(userId);
+        const webhookUrl = this.configService.get('WEBHOOK_URL');
+        if (!webhookUrl) return;
+
+        try {
+            // Check if webhook is already set (optional optimization, but v1 is fast)
+            // Just force set it
+            // v1 endpoint: /webhook/set/:instance
+            await axios.post(`${this.evolutionUrl}/webhook/set/${instanceName}`, {
+                webhookUrl: webhookUrl,
+                webhookByEvents: false, // Global events
+                events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE'],
+                enabled: true
+            }, { headers: this.getHeaders() });
+
+            // this.logger.log(`Webhook enforced for ${userId}`);
+        } catch (e) {
+            // Ignore error or log debug, it might fail if instance not ready yet
+            this.logger.debug(`Failed to ensure webhook for ${userId}: ${e.message}`);
         }
     }
 

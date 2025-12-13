@@ -321,9 +321,20 @@ export class WhatsappService implements OnModuleInit {
         const msgType = payload.type || payload.event; // v1 uses 'event', v2 uses 'type'
 
         // Check for message event (v1: messages.upsert, v2: MESSAGES_UPSERT)
-        if (msgType !== 'MESSAGES_UPSERT' && msgType !== 'messages.upsert') return;
+        if (msgType !== 'MESSAGES_UPSERT' && msgType !== 'messages.upsert') {
+            this.logger.debug(`Ignored webhook event type: ${msgType}`);
+            return;
+        }
 
-        if (!data || !data.key || data.key.fromMe) return;
+        if (!data || !data.key) {
+            this.logger.debug('Webhook data or key missing');
+            return;
+        }
+
+        // If fromMe is true, it means WE sent it via phone. 
+        // We usually want to see these in the dashboard too to keep history synced!
+        // So I am REMOVING the return on fromMe, but I will flag it.
+        const fromMe = data.key.fromMe;
 
         const remoteJid = data.key.remoteJid;
         const cleanFrom = remoteJid.replace(/@s\.whatsapp\.net|@g\.us/g, '');

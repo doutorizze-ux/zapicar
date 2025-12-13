@@ -11,8 +11,11 @@ import { Injectable } from '@nestjs/common';
 
 @WebSocketGateway({
     cors: {
-        origin: '*', // Allow all connections
+        origin: '*',
+        methods: ["GET", "POST"],
+        credentials: true
     },
+    transports: ['websocket', 'polling']
 })
 @Injectable()
 export class ChatGateway {

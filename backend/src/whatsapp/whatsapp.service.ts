@@ -352,10 +352,13 @@ export class WhatsappService implements OnModuleInit {
 
     // --- Logic from handleMessage ---
     private async processIncomingMessage(userId: string, from: string, senderName: string, text: string) {
+        this.logger.log(`[DEBUG] Processing incoming msg. User: ${userId}, From: ${from}, Text: ${text}`);
+
         // Log incoming
         await this.logMessage(userId, from, from, text, senderName, false);
 
         // Emit to Live Chat
+        this.logger.log(`[DEBUG] Emitting to Live Chat Room: ${userId}`);
         this.chatGateway.emitMessageToRoom(userId, {
             id: 'msg-' + Date.now(),
             from: from,

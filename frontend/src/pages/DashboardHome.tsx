@@ -38,7 +38,7 @@ export function DashboardHome() {
     }, []);
 
     const stats = [
-        { label: 'Veículos Ativos', value: statsData.activeVehicles, icon: Car, color: 'text-blue-600', bg: 'bg-blue-50', trend: 'Atualizado agora' },
+        { label: 'Veículos Ativos', value: statsData.activeVehicles, icon: Car, color: 'text-green-600', bg: 'bg-green-50', trend: 'Atualizado agora' },
         { label: 'Interações', value: statsData.interactions, icon: MessageSquare, color: 'text-green-600', bg: 'bg-green-50', trend: 'Total estimado' },
         { label: 'Leads Totais', value: statsData.leads, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', trend: 'Contatos únicos' },
         { label: 'Cliques no Bot', value: statsData.interactions, icon: MousePointerClick, color: 'text-orange-600', bg: 'bg-orange-50', trend: '+8%' },
@@ -95,7 +95,7 @@ export function DashboardHome() {
                 <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-gray-900">Leads Recentes</h3>
-                        <Link to="/dashboard/whatsapp" className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                        <Link to="/dashboard/whatsapp" className="text-sm text-green-600 hover:text-green-800 font-medium flex items-center gap-1">
                             Ver todos <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>
@@ -111,7 +111,7 @@ export function DashboardHome() {
                                             {(lead.name || lead.phone || 'L').charAt(0).toUpperCase()}
                                         </div>
                                         <div className="overflow-hidden">
-                                            <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate w-48">
+                                            <p className="font-bold text-gray-900 group-hover:text-green-600 transition-colors truncate w-48">
                                                 {lead.name || lead.phone}
                                             </p>
                                             <p className="text-sm text-gray-500 truncate w-64">{lead.lastMessage}</p>
@@ -134,7 +134,7 @@ export function DashboardHome() {
                         <div>
                             <div className="flex justify-between text-sm mb-2">
                                 <span className="text-gray-500">Plano Atual</span>
-                                <Link to="/dashboard/plans" className="text-blue-600 font-medium text-xs hover:underline">Gerenciar</Link>
+                                <Link to="/dashboard/plans" className="text-green-600 font-medium text-xs hover:underline">Gerenciar</Link>
                             </div>
                             <div className="p-3 bg-purple-50 text-purple-700 rounded-lg font-bold text-center border border-purple-100">
                                 Visualizar Planos
@@ -147,7 +147,7 @@ export function DashboardHome() {
                                 <span className="text-gray-900 font-medium">{statsData.activeVehicles} / 50</span>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-2">
-                                <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min((statsData.activeVehicles / 50) * 100, 100)}%` }}></div>
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: `${Math.min((statsData.activeVehicles / 50) * 100, 100)}%` }}></div>
                             </div>
                         </div>
 

@@ -70,7 +70,7 @@ export function LeadsPage() {
                     </div>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Novo Lead
@@ -95,7 +95,7 @@ export function LeadsPage() {
                                 <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
                                                 {getInitial(lead.name)}
                                             </div>
                                             <div>

@@ -216,7 +216,7 @@ export function SettingsPage() {
                             value={isEditing ? editForm.name : user.name}
                             onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                             disabled={!isEditing}
-                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-blue-500 ring-2 ring-blue-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                         />
                     </div>
                     <div>
@@ -226,7 +226,7 @@ export function SettingsPage() {
                             onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
                             disabled={!isEditing}
                             placeholder="Ex: 11999999999"
-                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-blue-500 ring-2 ring-blue-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                            className={`w-full px-4 py-2 border rounded-xl transition-colors ${isEditing ? 'bg-white border-green-500 ring-2 ring-green-500/20' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
                         />
                     </div>
                     <div>
@@ -238,7 +238,7 @@ export function SettingsPage() {
                             <button
                                 onClick={handleSaveProfile}
                                 disabled={isSaving}
-                                className="w-full py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSaving ? 'Salvando...' : (
                                     <>
@@ -247,7 +247,7 @@ export function SettingsPage() {
                                 )}
                             </button>
                         ) : (
-                            <button onClick={() => setIsEditing(true)} className="w-full py-2 text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-blue-600 border border-gray-200 rounded-xl transition-colors flex items-center justify-center gap-2">
+                            <button onClick={() => setIsEditing(true)} className="w-full py-2 text-gray-600 bg-gray-50 hover:bg-gray-100 hover:text-green-600 border border-gray-200 rounded-xl transition-colors flex items-center justify-center gap-2">
                                 <Pencil className="w-5 h-5" /> Editar Perfil
                             </button>
                         )}
@@ -277,7 +277,7 @@ export function SettingsPage() {
                             <p className="font-bold text-gray-900">{user.plan}</p>
                             <p className="text-sm text-gray-500">Próxima renovação em {(user as any).nextBilling || '-'}</p>
                         </div>
-                        <button onClick={() => navigate('/dashboard/plans')} className="text-blue-600 font-medium hover:underline text-sm">Gerenciar Plano</button>
+                        <button onClick={() => navigate('/dashboard/plans')} className="text-green-600 font-medium hover:underline text-sm">Gerenciar Plano</button>
                     </div>
                 </div>
             </div>
@@ -302,8 +302,8 @@ export function SettingsPage() {
                             <p className="text-sm text-gray-500">Usar IA Generativa (Gemini) para criar respostas naturais.</p>
                         </div>
                         <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                            <input type="checkbox" name="toggle" id="toggle" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-blue-600 right-0" />
-                            <label htmlFor="toggle" className="toggle-label block overflow-hidden h-6 rounded-full bg-blue-600 cursor-pointer"></label>
+                            <input type="checkbox" name="toggle" id="toggle" className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-green-600 right-0" />
+                            <label htmlFor="toggle" className="toggle-label block overflow-hidden h-6 rounded-full bg-green-600 cursor-pointer"></label>
                         </div>
                     </div>
                 </div>

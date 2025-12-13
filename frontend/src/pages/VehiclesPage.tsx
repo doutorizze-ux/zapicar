@@ -94,7 +94,7 @@ export function VehiclesPage() {
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors shadow-lg shadow-blue-600/20"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors shadow-lg shadow-green-600/20"
                 >
                     <Plus className="w-5 h-5" />
                     Novo Veículo
@@ -107,7 +107,7 @@ export function VehiclesPage() {
                     <input
                         type="text"
                         placeholder="Buscar por nome, marca ou modelo..."
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all"
                     />
                 </div>
                 <button className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors">
@@ -142,12 +142,12 @@ export function VehiclesPage() {
                                     <p className="text-gray-500 text-sm">{vehicle.model} • {vehicle.year}</p>
                                 </div>
                                 <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                                    <span className="text-xl font-bold text-blue-600">
+                                    <span className="text-xl font-bold text-green-600">
                                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(vehicle.price))}
                                     </span>
                                     <button
                                         onClick={() => handleEdit(vehicle)}
-                                        className="text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
+                                        className="text-sm font-medium text-gray-500 hover:text-green-600 transition-colors"
                                     >
                                         Editar
                                     </button>

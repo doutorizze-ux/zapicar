@@ -176,52 +176,62 @@ export function LiveChatPage() {
             // Actually, keep polling logic separate is better
         });
 
-        headers: { 'Authorization': `Bearer ${token}` }
-    })
-        .then(r => r.json())
-        .then(user => {
-            newSocket.emit('join_room', { userId: user.id });
-        });
-}
-        });
+        // Ensure we join the correct room if token is present
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetch(`${API_URL}/users/profile`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+                .then(r => r.json())
+                .then(user => {
+                    newSocket.emit('join_room', { userId: user.id });
+                })
+                .catch(() => { });
+        }
 
-newSocket.on('disconnect', () => setIsConnected(false));
-
-newSocket.on('new_message', (rawMsg: ChatMessage) => {
-    const cleanFrom = rawMsg.from.replace(/@c\.us|@g\.us/g, '');
-    const msg = { ...rawMsg, from: cleanFrom };
-
-    // Update contacts list last message
-    setContacts(prev => {
-        const contactId = msg.isBot && activeContactId ? activeContactId : (msg.from === 'me' ? activeContactId : cleanFrom);
-        if (!contactId) return prev;
-
-        const exists = prev.find(c => c.id === contactId);
-        const updatedContact = {
-            id: contactId!,
-            name: exists ? exists.name : (msg.senderName || contactId!),
-            lastMessage: msg.body,
-            lastTime: msg.timestamp,
-            unread: (exists?.unread || 0) + (activeContactId === contactId ? 0 : 1)
+        return () => {
+            newSocket.disconnect();
+            clearInterval(statusInterval);
         };
+    }, [activeContactId]);
 
-        const others = prev.filter(c => c.id !== contactId);
-        return [updatedContact, ...others];
+    newSocket.on('disconnect', () => setIsConnected(false));
+
+    newSocket.on('new_message', (rawMsg: ChatMessage) => {
+        const cleanFrom = rawMsg.from.replace(/@c\.us|@g\.us/g, '');
+        const msg = { ...rawMsg, from: cleanFrom };
+
+        // Update contacts list last message
+        setContacts(prev => {
+            const contactId = msg.isBot && activeContactId ? activeContactId : (msg.from === 'me' ? activeContactId : cleanFrom);
+            if (!contactId) return prev;
+
+            const exists = prev.find(c => c.id === contactId);
+            const updatedContact = {
+                id: contactId!,
+                name: exists ? exists.name : (msg.senderName || contactId!),
+                lastMessage: msg.body,
+                lastTime: msg.timestamp,
+                unread: (exists?.unread || 0) + (activeContactId === contactId ? 0 : 1)
+            };
+
+            const others = prev.filter(c => c.id !== contactId);
+            return [updatedContact, ...others];
+        });
+
+        // If chat is open, append message
+        if (activeContactId && (msg.from === activeContactId || msg.from === 'me' || msg.from === 'bot')) {
+            setMessages(prev => {
+                if (prev.find(m => m.id === msg.id)) return prev;
+                return [...prev, msg];
+            });
+        }
     });
 
-    // If chat is open, append message
-    if (activeContactId && (msg.from === activeContactId || msg.from === 'me' || msg.from === 'bot')) {
-        setMessages(prev => {
-            if (prev.find(m => m.id === msg.id)) return prev;
-            return [...prev, msg];
-        });
-    }
-});
-
-return () => {
-    newSocket.disconnect();
-};
-    }, [activeContactId]);
+    return () => {
+        newSocket.disconnect();
+    };
+}, [activeContactId]);
 
 const handleSendMessage = async () => {
     if (!inputText.trim() || !activeContactId) return;

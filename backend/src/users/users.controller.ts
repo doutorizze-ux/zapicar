@@ -10,7 +10,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from './entities/user.entity';
-
 import { PlansService } from '../plans/plans.service';
 
 @Controller('users')
@@ -20,8 +19,6 @@ export class UsersController {
         private readonly vehiclesService: VehiclesService,
         private readonly plansService: PlansService
     ) { }
-
-    // --- Rotas de Perfil (UserLogado) - Devem vir antes de :id ---
 
     @UseGuards(JwtAuthGuard)
     @Get('profile')
@@ -37,10 +34,6 @@ export class UsersController {
     @UseGuards(JwtAuthGuard)
     @Patch('profile')
     async updateProfile(@Request() req, @Body() body: { storeName?: string; phone?: string; slug?: string; primaryColor?: string; address?: string; storeDescription?: string }) {
-        console.log('--------------------------------------------------');
-        console.log('[UsersController] PATCH /profile called');
-        console.log('[UsersController] User:', req.user);
-
         const updates: any = {};
         if (body.storeName !== undefined) updates.storeName = body.storeName;
         if (body.phone !== undefined) updates.phone = body.phone;
@@ -86,34 +79,21 @@ export class UsersController {
         return this.usersService.updateById(req.user.userId, { coverUrl });
     }
 
-    // --- Public Storefront Route --
     @Get('public/:slug')
     async getPublicStore(@Param('slug') slug: string) {
         const user = await this.usersService.findBySlug(slug);
-        if (!user) {
-            throw new Error('Store not found');
-        }
+        if (!user) throw new Error('Store not found');
 
-        // Verify Plan Access
         let allowSite = false;
         if (user.planId) {
             const plan = await this.plansService.findOne(user.planId);
             if (plan && plan.isActive) {
-                const features = Array.isArray(plan.features)
-                    ? plan.features
-                    : (typeof plan.features === 'string' ? (plan.features as string).split(',') : []);
-
-                // Check both partial match (legacy) or exact string
-                if (features.some(f => f.trim().includes('Site Personalizado'))) {
-                    allowSite = true;
-                }
+                const features = Array.isArray(plan.features) ? plan.features : [];
+                if (features.some(f => f.trim().includes('Site Personalizado'))) allowSite = true;
             }
         }
 
-        // Allow Admin bypass or specific debug scenarios if needed, but per request:
-        if (!allowSite) {
-            throw new Error('Store website not active for this plan.');
-        }
+        if (!allowSite) throw new Error('Store website not active for this plan.');
 
         const vehicles = await this.vehiclesService.findAll(user.id);
 
@@ -132,7 +112,13 @@ export class UsersController {
         };
     }
 
-    // --- Rotas de Admin (Genéricas ou Parametrizadas) ---
+    @UseGuards(JwtAuthGuard)
+    @Get('export-site')
+    async exportSite(@Request() req) {
+        const user = await this.usersService.findById(req.user.userId);
+        if (!user) throw new Error('User not found');
+        return { html: this.usersService.generateStaticSite(user) };
+    }
 
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
@@ -141,9 +127,6 @@ export class UsersController {
         return this.usersService.findAll();
     }
 
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @Patch(':id')
@@ -156,10 +139,8 @@ export class UsersController {
         return this.usersService.updateById(id, body);
     }
 
-    // TEMP: Force Reset to ensure access - Re-added for Production fix
     @Post('force-reset-admin')
     async forceReset() {
-        // Resets to 'admin'
         return this.usersService.seedAdmin(true);
     }
 }

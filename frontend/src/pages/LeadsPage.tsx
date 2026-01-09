@@ -5,6 +5,7 @@ import { User, MessageSquare, Phone, Calendar, Plus, Trash2, Car, LayoutGrid, Li
 import { CRMBoard } from '../components/CRMBoard';
 import { API_URL } from '../config';
 import { CreateLeadModal } from '../components/CreateLeadModal';
+import { LeadChatModal } from '../components/LeadChatModal';
 
 export interface Lead {
     id: string;
@@ -31,6 +32,9 @@ export function LeadsPage() {
         wonValue: 0,
         hotLeads: 0
     });
+
+    const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     useEffect(() => {
         fetchLeads();
@@ -203,24 +207,28 @@ export function LeadsPage() {
                     leads={leads}
                     onUpdateStatus={handleUpdateStatus}
                     onDelete={handleDelete}
+                    onViewMessages={(lead) => {
+                        setSelectedLead(lead);
+                        setIsChatOpen(true);
+                    }}
                 />
             ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden text-xs md:text-sm">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-gray-50 border-b border-gray-200 font-medium text-gray-500">
+                        <table className="w-full text-left">
+                            <thead className="bg-gray-50 border-b border-gray-200 font-bold text-gray-400 uppercase tracking-widest text-[10px]">
                                 <tr>
                                     <th className="px-6 py-4">Nome / Contato</th>
                                     <th className="px-6 py-4">Última Mensagem</th>
                                     <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4">Telefone</th>
                                     <th className="px-6 py-4">Data</th>
-                                    <th className="px-6 py-4">Ações</th>
+                                    <th className="px-6 py-4 text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {leads.map(lead => (
-                                    <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={lead.id} className="hover:bg-gray-50 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
@@ -230,29 +238,27 @@ export function LeadsPage() {
                                                     <div className="flex items-center gap-2">
                                                         <p className="font-bold text-gray-900">{lead.name || 'Desconhecido'}</p>
                                                         {lead.isHot && (
-                                                            <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold uppercase rounded-full border border-red-200 flex items-center gap-1">
-                                                                🔥 Hot Lead
+                                                            <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black uppercase rounded-full border border-red-100">
+                                                                🔥 Hot
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs text-gray-500">ID: {lead.id.slice(0, 8)}</p>
+                                                    <p className="text-[10px] text-gray-400 font-medium">ID: {lead.id.slice(0, 8)}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1 max-w-xs">
                                                 {lead.interestSubject && (
-                                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 px-2 py-1 rounded w-fit mb-1">
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded w-fit mb-1 border border-green-100 uppercase tracking-tighter">
                                                         <Car className="w-3 h-3" />
                                                         {lead.interestSubject}
                                                     </div>
                                                 )}
                                                 <div className="flex items-center gap-2">
-                                                    <MessageSquare className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                                    <span className="truncate text-gray-600" title={lead.lastMessage}>
-                                                        {lead.lastMessage && lead.lastMessage.length > 50
-                                                            ? lead.lastMessage.substring(0, 50) + '...'
-                                                            : lead.lastMessage || '-'}
+                                                    <MessageSquare className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                                                    <span className="truncate text-gray-500 italic" title={lead.lastMessage}>
+                                                        "{lead.lastMessage || '-'}"
                                                     </span>
                                                 </div>
                                             </div>
@@ -271,30 +277,33 @@ export function LeadsPage() {
                                             </select>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2 text-gray-600">
-                                                <Phone className="w-4 h-4 text-gray-400" />
+                                            <div className="flex items-center gap-2 text-gray-600 font-medium">
+                                                <Phone className="w-4 h-4 text-gray-300" />
                                                 {formatPhone(lead.phone)}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-gray-500">
                                             <div className="flex items-center gap-2">
-                                                <Calendar className="w-4 h-4 text-gray-400" />
-                                                {new Date(lead.updatedAt).toLocaleDateString()} <span className="text-xs">{new Date(lead.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                <Calendar className="w-4 h-4 text-gray-300" />
+                                                <span className="font-medium">{new Date(lead.updatedAt).toLocaleDateString()}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex gap-2">
-                                                <a
-                                                    href={`https://wa.me/${lead.phone}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-green-600 hover:text-green-800 font-medium text-xs border border-green-200 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors inline-block"
+                                            <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedLead(lead);
+                                                        setIsChatOpen(true);
+                                                    }}
+                                                    className="px-4 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-md shadow-green-600/20 text-xs flex items-center gap-2"
                                                 >
-                                                    Conversar no WhatsApp
-                                                </a>
+                                                    <MessageSquare className="w-4 h-4" />
+                                                    Ver Mensagens
+                                                </button>
                                                 <button
                                                     onClick={() => handleDelete(lead.id)}
-                                                    className="text-red-600 hover:text-red-800 font-medium text-xs border border-red-200 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100"
+                                                    title="Excluir Lead"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
@@ -329,6 +338,15 @@ export function LeadsPage() {
                     fetchLeads();
                 }}
             />
-        </div >
+
+            <LeadChatModal
+                isOpen={isChatOpen}
+                lead={selectedLead}
+                onClose={() => {
+                    setIsChatOpen(false);
+                    setSelectedLead(null);
+                }}
+            />
+        </div>
     );
 }

@@ -12,6 +12,7 @@ interface CRMBoardProps {
     leads: Lead[];
     onUpdateStatus: (id: string, status: string) => void;
     onDelete: (id: string) => void;
+    onViewMessages?: (lead: Lead) => void;
 }
 
 const COLUMNS = [
@@ -22,7 +23,7 @@ const COLUMNS = [
     { id: 'LOST', title: 'Perdidos', icon: XCircle, color: 'bg-gray-500', bgColor: 'bg-gray-50' },
 ];
 
-export function CRMBoard({ leads, onUpdateStatus, onDelete }: CRMBoardProps) {
+export function CRMBoard({ leads, onUpdateStatus, onDelete, onViewMessages }: CRMBoardProps) {
 
     const getLeadsByStatus = (status: string) => leads.filter(l => (l.status || 'NEW') === status);
 
@@ -91,13 +92,20 @@ export function CRMBoard({ leads, onUpdateStatus, onDelete }: CRMBoardProps) {
 
                                     <div className="flex items-center justify-between pt-3 border-t border-gray-50">
                                         <div className="flex gap-2">
+                                            <button
+                                                onClick={() => onViewMessages?.(lead)}
+                                                className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                                                title="Ver Mensagens"
+                                            >
+                                                <MessageSquare className="w-3.5 h-3.5" />
+                                            </button>
                                             <a
                                                 href={`https://wa.me/${lead.phone}`}
                                                 target="_blank"
-                                                className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
-                                                title="WhatsApp"
+                                                className="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-100 transition-colors"
+                                                title="Abrir no WhatsApp"
                                             >
-                                                <MessageSquare className="w-3.5 h-3.5" />
+                                                <Phone className="w-3.5 h-3.5" />
                                             </a>
                                             <button
                                                 onClick={() => onDelete(lead.id)}

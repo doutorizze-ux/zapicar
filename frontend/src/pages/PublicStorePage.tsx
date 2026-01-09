@@ -170,20 +170,38 @@ const VehicleModal = ({ vehicle, store, onClose }: { vehicle: Vehicle, store: St
                         </div>
                     </div>
 
-                    {/* FOMO Section */}
+                    {/* FOMO Section - Smarter logic */}
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mb-6 p-4 bg-orange-50 border border-orange-100 rounded-2xl flex items-center gap-4"
+                        className={`mb-6 p-4 rounded-2xl flex items-center gap-4 border ${(vehicle.interestCount || 0) > 0
+                            ? "bg-orange-50 border-orange-100"
+                            : "bg-blue-50 border-blue-100"
+                            }`}
                     >
-                        <div className="p-3 bg-white rounded-xl shadow-sm">
-                            <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
+                        <div className={`p-3 rounded-xl shadow-sm bg-white`}>
+                            {(vehicle.interestCount || 0) > 0 ? (
+                                <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
+                            ) : (
+                                <Car className="w-5 h-5 text-blue-500" />
+                            )}
                         </div>
                         <div>
-                            <p className="text-sm font-bold text-orange-900">Veículo Muito Procurado!</p>
-                            <p className="text-xs text-orange-700/80 font-medium">
-                                {vehicle.interestCount || Math.floor(Math.random() * 5) + 2} pessoas entraram em contato por este carro hoje.
-                            </p>
+                            {(vehicle.interestCount || 0) > 0 ? (
+                                <>
+                                    <p className="text-sm font-bold text-orange-900">Veículo Muito Procurado!</p>
+                                    <p className="text-xs text-orange-700/80 font-medium">
+                                        {vehicle.interestCount} pessoas entraram em contato por este carro hoje.
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm font-bold text-blue-900">Novidade no Estoque!</p>
+                                    <p className="text-xs text-blue-700/80 font-medium">
+                                        Recém chegado, seja o primeiro a garantir essa oportunidade!
+                                    </p>
+                                </>
+                            )}
                         </div>
                     </motion.div>
 
@@ -608,7 +626,7 @@ export function PublicStorePage() {
                                         {vehicle.year}
                                     </div>
 
-                                    {(vehicle.views ? vehicle.views > 10 : idx % 3 === 0) && (
+                                    {((vehicle.views || 0) > 20 || (vehicle.interestCount && vehicle.interestCount > 5)) && (
                                         <div className="absolute top-4 left-4 bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5 animate-pulse">
                                             <Flame className="w-3 h-3" />
                                             Em Alta

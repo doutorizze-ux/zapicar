@@ -90,8 +90,13 @@ export class LeadsService {
             conversionRate: conversionRate.toFixed(1),
             openValue,
             wonValue,
-            hotLeads: leads.filter(l => l.isHot).length
+            hotLeads: leads.filter(l => l.isHot).length,
+            recentLeads: leads.slice(0, 5)
         };
+    }
+
+    async getStats(storeId: string) {
+        return this.getCRMStats(storeId);
     }
 
     async findAll(storeId: string): Promise<Lead[]> {

@@ -178,6 +178,35 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
         }
     };
 
+    const handleDelete = async () => {
+        if (!initialData) return;
+
+        const confirmed = window.confirm(`Tem certeza que deseja excluir o veículo ${formData.brand} ${formData.name}? Esta ação não pode ser desfeita.`);
+        if (!confirmed) return;
+
+        setLoading(true);
+        const token = localStorage.getItem('token');
+
+        try {
+            const response = await fetch(`${API_URL}/vehicles/${initialData.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+
+            if (response.ok) {
+                onSuccess();
+                onClose();
+            } else {
+                alert('Erro ao excluir veículo');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Erro ao conectar com servidor');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -423,9 +452,24 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-                                <button type="button" onClick={onClose} className="px-6 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
-                                <button type="submit" disabled={loading} className="px-6 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-600/20">{loading ? 'Salvando...' : 'Salvar Alterações'}</button>
+                            <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+                                <div>
+                                    {initialData && (
+                                        <button
+                                            type="button"
+                                            onClick={handleDelete}
+                                            disabled={loading}
+                                            className="px-4 py-2 text-red-500 font-bold hover:bg-red-50 rounded-xl transition-colors text-sm flex items-center gap-2"
+                                        >
+                                            <X className="w-4 h-4" />
+                                            Excluir Veículo
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={onClose} className="px-6 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
+                                    <button type="submit" disabled={loading} className="px-6 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-600/20">{loading ? 'Salvando...' : 'Salvar Alterações'}</button>
+                                </div>
                             </div>
                         </form>
                     )}

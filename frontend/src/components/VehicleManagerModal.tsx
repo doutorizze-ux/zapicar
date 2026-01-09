@@ -1,6 +1,7 @@
 import { X, Upload, FileText, Share2, Copy, Check, Instagram, Car, FileCheck } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { API_URL } from '../config';
+import { toPng } from 'html-to-image';
 
 const CAR_BRANDS = [
     'Toyota', 'Honda', 'Hyundai', 'Volkswagen', 'Chevrolet', 'Ford', 'Fiat', 'Jeep', 'Renault', 'Nissan',
@@ -19,6 +20,8 @@ type Tab = 'details' | 'documents' | 'marketing';
 export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }: VehicleManagerModalProps) {
     const [activeTab, setActiveTab] = useState<Tab>('details');
     const [loading, setLoading] = useState(false);
+    const [store, setStore] = useState<any>(null);
+    const flyerRef = useRef<HTMLDivElement>(null);
 
     // Form Data (Details Tab)
     const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -37,6 +40,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
 
     // Initialize
     useEffect(() => {
+        fetchStore();
         if (initialData) {
             setFormData({
                 brand: initialData.brand,
@@ -74,6 +78,22 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
             setImageFiles([]);
         }
     }, [initialData, isOpen]);
+
+    const fetchStore = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        try {
+            const res = await fetch(`${API_URL}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const user = await res.json();
+                setStore(user);
+            }
+        } catch (e) {
+            console.error('Error fetching store', e);
+        }
+    };
 
     const formatMoneyRequest = (value: string) => {
         if (!value) return 0;
@@ -242,6 +262,23 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const downloadFlyer = async () => {
+        if (!flyerRef.current) return;
+        setLoading(true);
+        try {
+            const dataUrl = await toPng(flyerRef.current, { cacheBust: true, pixelRatio: 2 });
+            const link = document.createElement('a');
+            link.download = `flyer-${formData.name || 'car'}.png`;
+            link.href = dataUrl;
+            link.click();
+        } catch (err) {
+            console.error('Error generating flyer', err);
+            alert('Erro ao gerar flyer. Tente novamente.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // --- Render Logic ---
     if (!isOpen) return null;
 
@@ -277,7 +314,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                         onClick={() => setActiveTab('documents')}
                         className={`py-4 text-sm font-semibold flex items-center gap-2 border-b-2 transition-colors ${activeTab === 'documents' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
-                        <FileCheck className="w-4 h-4" /> Documentação <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded ml-1">Beta</span>
+                        <FileCheck className="w-4 h-4" /> Documentação
                     </button>
                     <button
                         onClick={() => { setActiveTab('marketing'); generateMarketingText(); }}
@@ -483,35 +520,100 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
 
                     {/* --- MARKETING TAB --- */}
                     {activeTab === 'marketing' && (
-                        <div className="space-y-6">
-                            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <Instagram className="w-8 h-8" />
-                                    <div>
-                                        <h3 className="font-bold text-xl">Gerador de Legenda inteligente</h3>
-                                        <p className="text-white/80 text-sm">Copie o texto abaixo e cole no Instagram ou Facebook.</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* Text Area */}
+                            <div className="space-y-4">
+                                <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 text-white shadow-lg">
+                                    <div className="flex items-center gap-4">
+                                        <Instagram className="w-8 h-8" />
+                                        <div>
+                                            <h3 className="font-bold text-xl">Legenda para Post</h3>
+                                            <p className="text-white/80 text-sm">Pronta para Instagram e Facebook.</p>
+                                        </div>
                                     </div>
+                                </div>
+
+                                <div className="relative">
+                                    <textarea
+                                        value={marketingText}
+                                        onChange={(e) => setMarketingText(e.target.value)}
+                                        className="w-full h-80 p-4 bg-white border border-gray-200 rounded-2xl font-mono text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none resize-none shadow-sm"
+                                    />
+                                    <button
+                                        onClick={copyToClipboard}
+                                        className="absolute bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-black transition-colors shadow-xl"
+                                    >
+                                        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                        {copied ? 'Copiado!' : 'Copiar Texto'}
+                                    </button>
                                 </div>
                             </div>
 
-                            <div className="relative">
-                                <textarea
-                                    value={marketingText}
-                                    onChange={(e) => setMarketingText(e.target.value)}
-                                    className="w-full h-64 p-4 bg-gray-50 border border-gray-200 rounded-2xl font-mono text-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-none resize-none"
-                                />
-                                <button
-                                    onClick={copyToClipboard}
-                                    className="absolute bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-black transition-colors shadow-xl"
-                                >
-                                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                    {copied ? 'Copiado!' : 'Copiar Texto'}
-                                </button>
-                            </div>
+                            {/* Flyer Generator */}
+                            <div className="space-y-4">
+                                <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-6 text-white shadow-lg">
+                                    <div className="flex items-center gap-4">
+                                        <Share2 className="w-8 h-8" />
+                                        <div>
+                                            <h3 className="font-bold text-xl">Gerador de Flyer</h3>
+                                            <p className="text-white/80 text-sm">Crie um Stories profissional em 1 clique.</p>
+                                        </div>
+                                    </div>
+                                </div>
 
-                            <p className="text-center text-xs text-gray-400">
-                                * A imagem oficial para o post será gerada automaticamente na próxima atualização.
-                            </p>
+                                {/* Flyer Preview (The target for capture) */}
+                                <div className="flex justify-center">
+                                    <div
+                                        ref={flyerRef}
+                                        className="w-[300px] h-[533px] bg-black relative overflow-hidden shadow-2xl rounded-xl"
+                                        style={{ backgroundImage: `url(${existingImages[0]?.startsWith('http') ? existingImages[0] : (API_URL + existingImages[0])})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                                    >
+                                        {/* Overlay Gradient */}
+                                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
+                                        {/* Store Header */}
+                                        <div className="absolute top-6 inset-x-0 flex flex-col items-center">
+                                            <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                                                <p className="text-white text-[10px] font-black uppercase tracking-[0.2em]">{store?.storeName || 'Sua Loja'}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Car Info */}
+                                        <div className="absolute bottom-10 inset-x-6 text-white">
+                                            <p className="text-xl font-black uppercase leading-tight drop-shadow-lg">
+                                                {formData.brand} <br />
+                                                <span className="text-green-400">{formData.name}</span>
+                                            </p>
+                                            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">
+                                                Ano {formData.year} • {formData.km}km • {formData.transmission}
+                                            </p>
+
+                                            <div className="mt-6 flex flex-col gap-1">
+                                                <p className="text-[10px] font-black uppercase text-green-400 tracking-widest">Oportunidade</p>
+                                                <p className="text-3xl font-black">R$ {formData.price}</p>
+                                            </div>
+
+                                            <div className="mt-6 p-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 flex items-center justify-between">
+                                                <p className="text-[8px] font-bold uppercase text-white/60">Fale com a gente</p>
+                                                <p className="text-[10px] font-black">ZAPICAR.COM.BR</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={downloadFlyer}
+                                    disabled={loading}
+                                    className="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-green-700 transition-all shadow-xl shadow-green-600/20 active:scale-95 disabled:opacity-50"
+                                >
+                                    <Upload className="w-5 h-5 rotate-180" />
+                                    {loading ? 'Gerando...' : 'Baixar Flyer para Stories'}
+                                </button>
+
+                                <p className="text-center text-[10px] text-gray-400 uppercase font-bold tracking-widest">
+                                    Resolução sugerida: 1080x1920 (9:16)
+                                </p>
+                            </div>
                         </div>
                     )}
 

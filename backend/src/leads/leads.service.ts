@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead } from './entities/lead.entity';
+import { VehiclesService } from '../vehicles/vehicles.service';
 
 @Injectable()
 export class LeadsService {
     constructor(
         @InjectRepository(Lead)
         private leadsRepository: Repository<Lead>,
+        private vehiclesService: VehiclesService,
     ) { }
 
     async create(storeId: string, dto: any) {
@@ -51,19 +53,44 @@ export class LeadsService {
         return null;
     }
 
-    async getStats(storeId: string) {
-        const totalLeads = await this.leadsRepository.count({ where: { storeId } });
-        const recentLeads = await this.leadsRepository.find({
-            where: { storeId },
-            order: { updatedAt: 'DESC' },
-            take: 5
+    async getCRMStats(storeId: string) {
+        const leads = await this.leadsRepository.find({ where: { storeId } });
+        const vehicles = await this.vehiclesService.findAll(storeId);
+
+        const wonLeads = leads.filter(l => l.status === 'WON');
+        const conversionRate = leads.length > 0 ? (wonLeads.length / leads.length) * 100 : 0;
+
+        // Calcular volume financeiro (Soma dos preços dos carros nos leads ativos)
+        const openLeads = leads.filter(l => ['NEW', 'IN_PROGRESS', 'WAITING_FINANCIAL'].includes(l.status));
+        let openValue = 0;
+
+        openLeads.forEach(lead => {
+            if (lead.interestSubject) {
+                const vehicle = vehicles.find(v =>
+                    lead.interestSubject.toLowerCase().includes(v.name.toLowerCase()) ||
+                    lead.interestSubject.toLowerCase().includes(v.model.toLowerCase())
+                );
+                if (vehicle) openValue += Number(vehicle.price);
+            }
         });
 
-        // Simple mock for "messages count" based on leads activity or separate tracking? 
-        // For now, let's return leads count as "active conversations".
+        const wonValue = wonLeads.reduce((acc, lead) => {
+            if (lead.interestSubject) {
+                const vehicle = vehicles.find(v =>
+                    lead.interestSubject.toLowerCase().includes(v.name.toLowerCase()) ||
+                    lead.interestSubject.toLowerCase().includes(v.model.toLowerCase())
+                );
+                if (vehicle) return acc + Number(vehicle.price);
+            }
+            return acc;
+        }, 0);
+
         return {
-            totalLeads,
-            recentLeads
+            totalLeads: leads.length,
+            conversionRate: conversionRate.toFixed(1),
+            openValue,
+            wonValue,
+            hotLeads: leads.filter(l => l.isHot).length
         };
     }
 
@@ -72,6 +99,15 @@ export class LeadsService {
             where: { storeId },
             order: { updatedAt: 'DESC' }
         });
+    }
+
+    async updateStatus(id: string, storeId: string, status: string) {
+        const lead = await this.leadsRepository.findOne({ where: { id, storeId } });
+        if (lead) {
+            lead.status = status;
+            return this.leadsRepository.save(lead);
+        }
+        return null;
     }
 
     async remove(id: string, storeId: string) {

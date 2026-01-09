@@ -26,7 +26,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
     const [docFiles, setDocFiles] = useState<File[]>([]);
     const [formData, setFormData] = useState({
         brand: 'Toyota', name: '', model: '', year: new Date().getFullYear(),
-        price: '', category: 'Seminovo', km: 0, fuel: 'Flex',
+        price: '', costPrice: '', category: 'Seminovo', km: 0, fuel: 'Flex',
         transmission: 'Automático', color: '', description: '', location: '',
         trava: false, alarme: false, som: false, teto: false, banco_couro: false,
     });
@@ -56,6 +56,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
                 som: initialData.som || false,
                 teto: initialData.teto || false,
                 banco_couro: initialData.banco_couro || false,
+                costPrice: initialData.costPrice ? initialData.costPrice.toString().replace('.', ',') : '',
             });
             setExistingImages(initialData.images || []);
             setDocFiles([]); // Reset pending docs
@@ -64,7 +65,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
         } else {
             setFormData({
                 brand: 'Toyota', name: '', model: '', year: new Date().getFullYear(),
-                price: '', category: 'Seminovo', km: 0, fuel: 'Flex',
+                price: '', costPrice: '', category: 'Seminovo', km: 0, fuel: 'Flex',
                 transmission: 'Automático', color: '', description: '', location: '',
                 trava: false, alarme: false, som: false, teto: false, banco_couro: false,
             });
@@ -81,11 +82,12 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
     };
 
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name } = e.target;
         let value = e.target.value.replace(/\D/g, '');
         value = (Number(value) / 100).toFixed(2) + '';
         value = value.replace('.', ',');
         value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        setFormData(prev => ({ ...prev, price: value }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -165,6 +167,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
             const payload = {
                 ...formData,
                 price: formatMoneyRequest(formData.price),
+                costPrice: formatMoneyRequest(formData.costPrice),
                 year: Number(formData.year),
                 km: Number(formData.km),
                 images: initialData ? existingImages : [] // Use modified list if editing
@@ -340,7 +343,28 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                         <div><label className="text-xs font-bold text-gray-500 uppercase">KM</label><input type="number" name="km" value={formData.km} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
                                         <div><label className="text-xs font-bold text-gray-500 uppercase">Cor</label><input name="color" value={formData.color} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
                                     </div>
-                                    <div><label className="text-xs font-bold text-gray-500 uppercase">Preço (R$)</label><input name="price" value={formData.price} onChange={handlePriceChange} className="w-full mt-1 p-2 border rounded-lg font-bold text-green-700" placeholder="0,00" /></div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><label className="text-xs font-bold text-gray-500 uppercase">Preço de Venda (R$)</label><input name="price" value={formData.price} onChange={handlePriceChange} className="w-full mt-1 p-2 border rounded-lg font-bold text-green-700" placeholder="0,00" /></div>
+                                        <div><label className="text-xs font-bold text-gray-500 uppercase">Preço de Custo (R$)</label><input name="costPrice" value={formData.costPrice} onChange={handlePriceChange} className="w-full mt-1 p-2 border rounded-lg font-bold text-red-700" placeholder="0,00" /></div>
+                                    </div>
+
+                                    {/* Profit Indicator */}
+                                    {formData.price && formData.costPrice && (
+                                        <div className="p-3 bg-gray-900 rounded-xl flex items-center justify-between text-white border-t-4 border-green-500">
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Lucro Estimado</p>
+                                                <p className="text-lg font-black text-green-400">
+                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formatMoneyRequest(formData.price) - formatMoneyRequest(formData.costPrice))}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Margem</p>
+                                                <p className="font-bold text-sm">
+                                                    {((formatMoneyRequest(formData.price) - formatMoneyRequest(formData.costPrice)) / formatMoneyRequest(formData.price) * 100).toFixed(1)}%
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-4">

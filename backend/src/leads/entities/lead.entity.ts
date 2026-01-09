@@ -23,6 +23,9 @@ export class Lead {
     @Column({ nullable: true })
     interestSubject: string;
 
+    @Column({ default: 'NEW' })
+    status: string; // 'NEW', 'IN_PROGRESS', 'WAITING_FINANCIAL', 'WON', 'LOST'
+
     @CreateDateColumn()
     createdAt: Date;
 

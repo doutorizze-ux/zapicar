@@ -13,6 +13,7 @@ interface Vehicle {
     price: number;
     category: 'Novo' | 'Seminovo';
     images?: string[];
+    costPrice?: number;
 }
 
 export function VehiclesPage() {
@@ -152,12 +153,19 @@ export function VehiclesPage() {
                                     <p className="text-gray-500 text-sm">{vehicle.model} • {vehicle.year}</p>
                                 </div>
                                 <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                                    <span className="text-xl font-bold text-green-600">
-                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(vehicle.price))}
-                                    </span>
+                                    <div className="flex flex-col">
+                                        <span className="text-xl font-bold text-green-600">
+                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(vehicle.price))}
+                                        </span>
+                                        {vehicle.costPrice !== undefined && vehicle.costPrice > 0 && (
+                                            <span className="text-[10px] font-bold text-gray-400">
+                                                Margem: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(vehicle.price) - Number(vehicle.costPrice))}
+                                            </span>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={() => handleEdit(vehicle)}
-                                        className="text-sm font-medium text-gray-500 hover:text-green-600 transition-colors"
+                                        className="px-4 py-2 bg-gray-50 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-100 transition-colors"
                                     >
                                         Gerenciar
                                     </button>

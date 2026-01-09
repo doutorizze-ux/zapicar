@@ -352,7 +352,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
                 await this.sendMessage(userId, jid, "Envie sua dúvida e eu responderei com base nas informações da loja 😉");
             } else {
-                await this.handleCarSearch(userId, jid, msg, storeName);
+                await this.handleCarSearch(userId, jid, msg, user);
             }
         } else if (currentState === 'WAITING_FAQ') {
             const answer = await this.faqService.findMatch(userId, msg);
@@ -400,43 +400,33 @@ Sou seu assistente virtual. Para começar, você pode:
         }
     }
 
-    private async handleCarSearch(userId: string, jid: string, query: string, storeName: string) {
+    private async handleCarSearch(userId: string, jid: string, query: string, user: any) {
+        const storeName = user?.storeName || "Loja";
         const allVehicles = await this.vehiclesService.findAll(userId);
         let found: any[] = [];
 
         if (query) {
             // Smart Token Search
             const qNormalized = query.toLowerCase().trim();
-            const tokens = qNormalized.split(/\s+/).filter(t => t.length > 1); // Ignore single chars
+            const tokens = qNormalized.split(/\s+/).filter(t => t.length > 1);
 
             const scored = allVehicles.map(v => {
                 let score = 0;
                 const vName = (v.name || '').toLowerCase();
                 const vModel = (v.model || '').toLowerCase();
                 const vBrand = (v.brand || '').toLowerCase();
-
-                // Construct a broad search string
-                // Note: We prioritize matches in Model/Brand significantly over just 'appearing' in the description
                 const searchStr = `${vName} ${vBrand} ${vModel} ${v.year || ''} ${v.color || ''}`;
 
                 for (const token of tokens) {
-                    // Broader Match in complete string
                     if (searchStr.includes(token)) score += 1;
-
-                    // Exact Word Match (Prevents "Gol" matching "Golf" partially)
                     const regex = new RegExp(`\\b${token}\\b`, 'i');
-                    if (regex.test(searchStr)) score += 3; // Boosted exact match
-
-                    // High value match on Model/Brand specifically
+                    if (regex.test(searchStr)) score += 3;
                     if (vModel.includes(token)) score += 2;
                     if (vBrand.includes(token)) score += 1;
                 }
-
                 return { car: v, score };
             });
 
-            // Filter and sort
-            // Threshold: score > 1 to avoid very weak matches
             found = scored
                 .filter(item => item.score > 1)
                 .sort((a, b) => b.score - a.score)
@@ -445,44 +435,34 @@ Sou seu assistente virtual. Para começar, você pode:
 
         if (found.length > 0) {
             const limit = 3;
-            // Take top 3
             const cars: any[] = found.slice(0, limit);
 
-            // Mark interest in the top car
             try {
                 await this.leadsService.setInterest(userId, jid, `${cars[0].brand} ${cars[0].name}`);
             } catch (e) { }
 
+            const clientUrl = this.configService.get('CLIENT_URL') || 'https://zapicar.com.br';
+
             for (const car of cars) {
-                // Send Images
+                // Send ONLY the first image to avoid flooding
                 if (car.images && car.images.length > 0) {
-                    for (const img of car.images) {
-                        await this.sendImage(userId, jid, this.resolveImageUrl(img));
-                        // Small delay between images
-                        await new Promise(r => setTimeout(r, 600));
-                    }
+                    await this.sendImage(userId, jid, this.resolveImageUrl(car.images[0]));
+                    await new Promise(r => setTimeout(r, 800));
                 }
 
-                // Send Details
+                // Send Details + Deep Link
                 const price = Number(car.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                const optionals: string[] = [];
-                if (car.trava) optionals.push('Trava');
-                if (car.alarme) optionals.push('Alarme');
-                if (car.som) optionals.push('Som');
-                if (car.teto) optionals.push('Teto Solar');
-                if (car.banco_couro) optionals.push('Banco de Couro');
+                const vehicleLink = user?.slug ? `${clientUrl}/${user.slug}?v=${car.id}` : null;
 
                 let specs = `🚘 *${car.brand} ${car.name}*
 📝 *Versão:* ${car.model || ''}
 📅 *Ano:* ${car.year}
 🛣️ *KM:* ${car.km}
-🎨 *Cor:* ${car.color || 'Não inf.'}
 💰 *R$ ${price}*
-⚙️ *Especificações:*
-${car.transmission || ''} | ${car.fuel || ''}`;
+⚙️ *Câmbio:* ${car.transmission || 'Manual'}`;
 
-                if (optionals.length > 0) {
-                    specs += `\n\n✨ *Opcionais:* \n${optionals.join(' | ')}`;
+                if (vehicleLink) {
+                    specs += `\n\n🔗 *Ver todos os detalhes e fotos:* \n${vehicleLink}`;
                 }
 
                 await this.sendMessage(userId, jid, specs);

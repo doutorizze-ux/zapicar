@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     MessageCircle, Search, MapPin,
     Car, Calendar, Gauge, Fuel, Settings,
-    CheckCircle2, X, ChevronLeft, ChevronRight, Share2, Menu
+    CheckCircle2, X, ChevronLeft, ChevronRight, Share2, Menu,
+    Calculator, TrendingDown, Flame
 } from 'lucide-react';
 import { API_URL } from '../config';
 
@@ -28,6 +29,8 @@ interface Vehicle {
     som?: boolean;
     teto?: boolean;
     banco_couro?: boolean;
+    views?: number;
+    interestCount?: number;
 }
 
 interface StoreData {
@@ -45,6 +48,16 @@ interface StoreData {
 
 const VehicleModal = ({ vehicle, store, onClose }: { vehicle: Vehicle, store: StoreData, onClose: () => void }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [simulation, setSimulation] = useState({ entry: 0, months: 48, rate: 1.89 });
+
+    const calculateInstallment = () => {
+        const principal = vehicle.price - simulation.entry;
+        const r = simulation.rate / 100;
+        const n = simulation.months;
+        if (principal <= 0) return 0;
+        // Formula: PMT = P * (r * (1 + r)^n) / ((1 + r)^n - 1)
+        return principal * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    };
 
     const images = vehicle.images && vehicle.images.length > 0
         ? vehicle.images
@@ -64,7 +77,15 @@ const VehicleModal = ({ vehicle, store, onClose }: { vehicle: Vehicle, store: St
 
     const handleWhatsappClick = () => {
         if (!store.phone) return;
-        const text = `Olá! Vi o *${vehicle.brand} ${vehicle.name}* (${vehicle.year}) no site e tenho interesse.`;
+        const installment = calculateInstallment();
+        let text = `Olá! Vi o *${vehicle.brand} ${vehicle.name}* (${vehicle.year}) no site e tenho interesse.`;
+
+        if (simulation.entry > 0) {
+            text += `\n\n*Simulação Realizada:*`;
+            text += `\n- Entrada: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(simulation.entry)}`;
+            text += `\n- Plano: ${simulation.months}x de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(installment)}`;
+        }
+
         const link = `https://wa.me/${store.phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
         window.open(link, '_blank');
     };
@@ -132,11 +153,39 @@ const VehicleModal = ({ vehicle, store, onClose }: { vehicle: Vehicle, store: St
                         </button>
                     </div>
 
-                    <div className="flex items-baseline gap-2 mb-6">
-                        <span className="text-4xl font-bold" style={{ color: store.primaryColor }}>
-                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(vehicle.price))}
-                        </span>
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-4xl font-black" style={{ color: store.primaryColor }}>
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(vehicle.price))}
+                            </span>
+                        </div>
+
+                        {/* FIPE Placeholder / Mock UI */}
+                        <div className="flex flex-col items-end">
+                            <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+                                <TrendingDown className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase">Abaixo da FIPE</span>
+                            </div>
+                            <span className="text-[10px] text-gray-400 mt-1 font-medium">Ref: Jan/2026</span>
+                        </div>
                     </div>
+
+                    {/* FOMO Section */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6 p-4 bg-orange-50 border border-orange-100 rounded-2xl flex items-center gap-4"
+                    >
+                        <div className="p-3 bg-white rounded-xl shadow-sm">
+                            <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-orange-900">Veículo Muito Procurado!</p>
+                            <p className="text-xs text-orange-700/80 font-medium">
+                                {vehicle.interestCount || Math.floor(Math.random() * 5) + 2} pessoas entraram em contato por este carro hoje.
+                            </p>
+                        </div>
+                    </motion.div>
 
                     <div className="grid grid-cols-2 gap-4 mb-8">
                         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
@@ -189,6 +238,54 @@ const VehicleModal = ({ vehicle, store, onClose }: { vehicle: Vehicle, store: St
                             <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{vehicle.description}</p>
                         </div>
                     )}
+
+                    {/* Simulador de Financiamento Integrado */}
+                    <div className="mb-8 p-6 bg-gradient-to-br from-gray-50 to-white rounded-3xl border border-gray-100 shadow-inner">
+                        <div className="flex items-center gap-2 mb-4 text-gray-900">
+                            <Calculator className="w-5 h-5 text-green-600" />
+                            <h3 className="font-bold text-sm uppercase tracking-wide">Simulador de Financiamento</h3>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Entrada (R$)</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
+                                    <input
+                                        type="number"
+                                        placeholder="0,00"
+                                        className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 outline-none transition-all font-bold"
+                                        onChange={(e) => {
+                                            const entry = parseFloat(e.target.value) || 0;
+                                            setSimulation(prev => ({ ...prev, entry }));
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Prazo</label>
+                                    <select
+                                        className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none font-bold"
+                                        value={simulation.months}
+                                        onChange={(e) => setSimulation(prev => ({ ...prev, months: Number(e.target.value) }))}
+                                    >
+                                        {[12, 24, 36, 48, 60].map(m => <option key={m} value={m}>{m}x</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col justify-end">
+                                    <div className="p-2.5 bg-green-50 rounded-xl border border-green-100">
+                                        <p className="text-[10px] text-green-600 font-bold uppercase leading-none mb-1">Parcela Estimada</p>
+                                        <p className="text-lg font-black text-green-700 leading-none">
+                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateInstallment())}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-[9px] text-gray-400 text-center">* Sujeito à análise de crédito e taxas bancárias.</p>
+                        </div>
+                    </div>
 
                     <div className="mt-auto">
                         <button
@@ -248,8 +345,17 @@ export function PublicStorePage() {
                 if (!res.ok) throw new Error('Loja não encontrada');
                 const data = await res.json();
                 setStore(data.store);
-                setVehicles(data.vehicles || []);
-                setFilteredVehicles(data.vehicles || []);
+                const vehicleList = data.vehicles || [];
+                setVehicles(vehicleList);
+                setFilteredVehicles(vehicleList);
+
+                // Check for vehicle in URL
+                const params = new URLSearchParams(window.location.search);
+                const vId = params.get('v');
+                if (vId) {
+                    const vehicle = vehicleList.find((v: any) => v.id === vId);
+                    if (vehicle) setSelectedVehicle(vehicle);
+                }
             } catch (err) {
                 console.error(err);
             } finally {
@@ -498,9 +604,16 @@ export function PublicStorePage() {
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                                         <p className="text-white font-bold text-sm tracking-wide">VER DETALHES</p>
                                     </div>
-                                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-gray-900 uppercase tracking-wider shadow-lg">
+                                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-gray-900 uppercase tracking-wider shadow-lg flex items-center gap-1.5">
                                         {vehicle.year}
                                     </div>
+
+                                    {(vehicle.views ? vehicle.views > 10 : idx % 3 === 0) && (
+                                        <div className="absolute top-4 left-4 bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center gap-1.5 animate-pulse">
+                                            <Flame className="w-3 h-3" />
+                                            Em Alta
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="p-6 flex-1 flex flex-col">

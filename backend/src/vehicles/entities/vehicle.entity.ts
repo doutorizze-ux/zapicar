@@ -48,6 +48,9 @@ export class Vehicle {
     @Column('decimal', { precision: 12, scale: 2 })
     price: number;
 
+    @Column('decimal', { precision: 12, scale: 2, nullable: true, default: 0 })
+    costPrice: number; // For Profit Calculation
+
     @Column()
     location: string;
 
@@ -71,6 +74,12 @@ export class Vehicle {
 
     @Column({ default: false })
     banco_couro: boolean;
+
+    @Column({ default: 0 })
+    views: number;
+
+    @Column({ default: 0 })
+    interestCount: number;
 
     @ManyToOne(() => Store)
     store: Store;

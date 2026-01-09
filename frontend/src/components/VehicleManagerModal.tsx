@@ -571,31 +571,59 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                         {/* Overlay Gradient */}
                                         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/40 to-transparent" />
 
-                                        {/* Store Header */}
+                                        {/* Store Header with Logo */}
                                         <div className="absolute top-6 inset-x-0 flex flex-col items-center">
-                                            <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-                                                <p className="text-white text-[10px] font-black uppercase tracking-[0.2em]">{store?.storeName || 'Sua Loja'}</p>
-                                            </div>
+                                            {store?.logoUrl ? (
+                                                <div className="bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-xl mb-2">
+                                                    <img
+                                                        src={store.logoUrl.startsWith('http') ? store.logoUrl : `${API_URL}${store.logoUrl}`}
+                                                        className="h-10 w-auto object-contain"
+                                                        alt="Logo"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                                                    <p className="text-white text-[10px] font-black uppercase tracking-[0.2em]">{store?.storeName || 'Sua Loja'}</p>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Car Info */}
                                         <div className="absolute bottom-10 inset-x-6 text-white">
-                                            <p className="text-xl font-black uppercase leading-tight drop-shadow-lg">
+                                            <p className="text-2xl font-black uppercase leading-tight drop-shadow-lg">
                                                 {formData.brand} <br />
                                                 <span className="text-green-400">{formData.name}</span>
                                             </p>
-                                            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-1">
-                                                Ano {formData.year} • {formData.km}km • {formData.transmission}
-                                            </p>
-
-                                            <div className="mt-6 flex flex-col gap-1">
-                                                <p className="text-[10px] font-black uppercase text-green-400 tracking-widest">Oportunidade</p>
-                                                <p className="text-3xl font-black">R$ {formData.price}</p>
+                                            <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2">
+                                                <p className="text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">
+                                                    ANO {formData.year}
+                                                </p>
+                                                <p className="text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">
+                                                    {formData.km}KM
+                                                </p>
+                                                <p className="text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">
+                                                    {formData.fuel}
+                                                </p>
+                                                <p className="text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">
+                                                    {formData.transmission}
+                                                </p>
                                             </div>
 
-                                            <div className="mt-6 p-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/10 flex items-center justify-between">
-                                                <p className="text-[8px] font-bold uppercase text-white/60">Fale com a gente</p>
-                                                <p className="text-[10px] font-black">ZAPICAR.COM.BR</p>
+                                            <div className="mt-8 flex flex-col gap-1">
+                                                <p className="text-[10px] font-black uppercase text-green-400 tracking-[0.2em]">Oportunidade</p>
+                                                <p className="text-4xl font-black tabular-nums">
+                                                    R$ {formData.price.includes(',') ? formData.price : new Intl.NumberFormat('pt-BR').format(Number(formData.price))}
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-8 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <p className="text-[8px] font-black uppercase text-white/50 tracking-widest">Entre em contato</p>
+                                                    <p className="text-[12px] font-black uppercase tracking-wider">{store?.storeName || 'LOJA'}</p>
+                                                </div>
+                                                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                                                    <Instagram className="w-4 h-4 text-white" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

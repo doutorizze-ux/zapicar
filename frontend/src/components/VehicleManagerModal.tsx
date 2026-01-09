@@ -83,7 +83,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
         const token = localStorage.getItem('token');
         if (!token) return;
         try {
-            const res = await fetch(`${API_URL}/auth/me`, {
+            const res = await fetch(`${API_URL}/users/profile`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -594,35 +594,36 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                 {formData.brand} <br />
                                                 <span className="text-green-400">{formData.name}</span>
                                             </p>
-                                            <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2">
-                                                <p className="text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">
-                                                    ANO {formData.year}
-                                                </p>
-                                                <p className="text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">
-                                                    {formData.km}KM
-                                                </p>
-                                                <p className="text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">
+
+                                            <div className="flex flex-wrap gap-2 mt-4">
+                                                <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-[9px] font-bold uppercase">
+                                                    Ano {formData.year}
+                                                </div>
+                                                <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-[9px] font-bold uppercase">
+                                                    {formData.km} KM
+                                                </div>
+                                                <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-[9px] font-bold uppercase">
                                                     {formData.fuel}
-                                                </p>
-                                                <p className="text-[10px] font-bold text-white uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded">
+                                                </div>
+                                                <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-[9px] font-bold uppercase">
                                                     {formData.transmission}
-                                                </p>
+                                                </div>
                                             </div>
 
                                             <div className="mt-8 flex flex-col gap-1">
-                                                <p className="text-[10px] font-black uppercase text-green-400 tracking-[0.2em]">Oportunidade</p>
-                                                <p className="text-4xl font-black tabular-nums">
+                                                <p className="text-[10px] font-black uppercase text-green-400 tracking-[0.2em] drop-shadow-md">Oportunidade Única</p>
+                                                <p className="text-4xl font-black tabular-nums drop-shadow-2xl">
                                                     R$ {formData.price.includes(',') ? formData.price : new Intl.NumberFormat('pt-BR').format(Number(formData.price))}
                                                 </p>
                                             </div>
 
                                             <div className="mt-8 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 flex items-center justify-between">
                                                 <div className="flex flex-col">
-                                                    <p className="text-[8px] font-black uppercase text-white/50 tracking-widest">Entre em contato</p>
-                                                    <p className="text-[12px] font-black uppercase tracking-wider">{store?.storeName || 'LOJA'}</p>
+                                                    <p className="text-[8px] font-black uppercase text-white/50 tracking-widest">Postado por</p>
+                                                    <p className="text-[12px] font-black uppercase tracking-wider">{store?.storeName || 'Confira no Site'}</p>
                                                 </div>
-                                                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                                                    <Instagram className="w-4 h-4 text-white" />
+                                                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white/20">
+                                                    <Instagram className="w-5 h-5 text-white" />
                                                 </div>
                                             </div>
                                         </div>

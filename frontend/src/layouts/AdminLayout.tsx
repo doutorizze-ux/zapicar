@@ -1,7 +1,7 @@
 
 import { Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, Users, CreditCard, LogOut, Package, Menu, X, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, LogOut, Package, Menu, X, HelpCircle, Settings } from 'lucide-react';
 import { useState } from 'react';
 
 export function AdminLayout() {
@@ -77,6 +77,14 @@ export function AdminLayout() {
                     >
                         <HelpCircle className="w-5 h-5" />
                         Suporte
+                    </button>
+
+                    <button
+                        onClick={() => { navigate('/admin/system'); setIsMobileMenuOpen(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-slate-800 hover:text-white rounded-xl transition-all"
+                    >
+                        <Settings className="w-5 h-5" />
+                        Sistema
                     </button>
                 </nav>
 

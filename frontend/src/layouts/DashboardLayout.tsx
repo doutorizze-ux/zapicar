@@ -3,6 +3,8 @@ import { LayoutDashboard, Car, Settings, LogOut, Smartphone, CreditCard, BookOpe
 import { cn } from '../utils';
 import { useState, useEffect } from 'react';
 import { SupportChatWidget } from '../components/SupportChatWidget';
+import { useSystem } from '../contexts/SystemContext';
+import { API_URL } from '../config';
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: 'Visão Geral', path: '/dashboard' },
@@ -20,6 +22,7 @@ const sidebarItems = [
 ];
 
 export function DashboardLayout() {
+    const { settings } = useSystem();
     const location = useLocation();
     const navigate = useNavigate();
     const [storeInfo, setStoreInfo] = useState<{ name: string; logoUrl: string; subscriptionId?: string; subscriptionStatus?: string; planName?: string; nextDueDate?: string } | null>(null);
@@ -60,7 +63,7 @@ export function DashboardLayout() {
                         }
 
                         setStoreInfo({
-                            name: data.storeName || 'Zapicar',
+                            name: data.storeName || settings.siteName,
                             logoUrl: data.logoUrl || '',
                             subscriptionId: data.subscriptionId,
                             subscriptionStatus: status,
@@ -111,8 +114,8 @@ export function DashboardLayout() {
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-30 flex items-center justify-between px-4">
                 <div className="flex items-center gap-3">
-                    <img src={storeInfo?.logoUrl || "/logo-dark.png"} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
-                    <span className="font-bold text-gray-900 truncate max-w-[150px]">{storeInfo?.name || 'Zapicar'}</span>
+                    <img src={storeInfo?.logoUrl || (settings.siteLogo.startsWith('/') ? settings.siteLogo : `${API_URL}${settings.siteLogo}`)} alt="Logo" className="w-8 h-8 rounded-lg object-cover" />
+                    <span className="font-bold text-gray-900 truncate max-w-[150px]">{storeInfo?.name || settings.siteName}</span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-gray-600">
                     {isMobileMenuOpen ? <X /> : <Menu />}
@@ -153,7 +156,7 @@ export function DashboardLayout() {
                         </div>
                     ) : (
                         <div className="flex items-center gap-3">
-                            <img src="/logo-dark.png" alt="Zapicar" className="h-9 w-auto brightness-0 invert opacity-90 hover:opacity-100 transition-opacity" />
+                            <img src={settings.siteLogo.startsWith('/') ? settings.siteLogo : `${API_URL}${settings.siteLogo}`} alt={settings.siteName} className="h-9 w-auto brightness-0 invert opacity-90 hover:opacity-100 transition-opacity" />
                             <span className="text-white/40 text-xs mt-1 font-medium bg-white/5 px-2 py-0.5 rounded-full border border-white/5">BETA</span>
                         </div>
                     )}

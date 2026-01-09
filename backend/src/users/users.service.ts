@@ -16,6 +16,7 @@ export class UsersService implements OnModuleInit {
 
     generateStaticSite(user: User): string {
         const apiUrl = this.configService.get('API_URL') || 'https://zapp.fitness/api';
+        const fileBaseUrl = apiUrl.replace('/api', '');
         const slug = user.slug || 'loja';
 
         return `<!DOCTYPE html>
@@ -37,83 +38,89 @@ export class UsersService implements OnModuleInit {
 </head>
 <body class="bg-gray-50 text-gray-900 scroll-smooth">
 
-    <!-- Navbar -->
     <nav class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                ${user.logoUrl ? `<img src="${user.logoUrl.startsWith('http') ? user.logoUrl : apiUrl + user.logoUrl}" class="h-10 w-auto object-contain" />` : `<div class="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold text-xl">${user.storeName ? user.storeName[0] : 'S'}</div><span class="font-bold text-xl">${user.storeName || 'Loja'}</span>`}
+                ${user.logoUrl ? `<img src="${user.logoUrl.startsWith('http') ? user.logoUrl : fileBaseUrl + user.logoUrl}" class="h-10 w-auto object-contain" />` : `<div class="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white font-bold text-xl">${user.storeName ? user.storeName[0] : 'S'}</div><span class="font-bold text-xl">${user.storeName || 'Loja'}</span>`}
             </div>
             <div class="hidden md:flex items-center gap-8 font-medium text-sm text-gray-500">
                 <a href="#stock" class="hover:text-gray-900">Estoque</a>
                 <a href="#about" class="hover:text-gray-900">Sobre</a>
                 <a href="#footer" class="hover:text-gray-900">Contato</a>
-                ${user.phone ? `<a href="https://wa.me/${user.phone.replace(/\D/g, '')}" target="_blank" class="px-5 py-2.5 bg-primary text-white rounded-full font-bold">Fale Conosco</a>` : ''}
+                ${user.phone ? `<a href="https://wa.me/${user.phone.replace(/\D/g, '')}" target="_blank" class="px-5 py-2.5 bg-primary text-white rounded-full font-bold shadow-lg shadow-primary/20">Fale Conosco</a>` : ''}
             </div>
         </div>
     </nav>
 
-    <!-- Hero -->
-    <div class="relative h-[40vh] md:h-[50vh] flex items-center justify-center overflow-hidden">
-        ${user.coverUrl ? `<img src="${user.coverUrl.startsWith('http') ? user.coverUrl : apiUrl + user.coverUrl}" class="absolute inset-0 w-full h-full object-cover" />` : `<div class="absolute inset-0 bg-primary opacity-20"></div>`}
+    <div class="relative h-[40vh] md:h-[60vh] flex items-center justify-center overflow-hidden">
+        ${user.coverUrl ? `<img src="${user.coverUrl.startsWith('http') ? user.coverUrl : fileBaseUrl + user.coverUrl}" class="absolute inset-0 w-full h-full object-cover" />` : `<div class="absolute inset-0 bg-primary opacity-20"></div>`}
         <div class="absolute inset-0 bg-black/40"></div>
-        <div class="relative z-10 text-center px-4 max-w-3xl mx-auto text-white">
-            <h1 class="text-4xl md:text-6xl font-black mb-6 drop-shadow-lg">${user.storeName || 'Bem-vindo'}</h1>
-            <p class="text-lg md:text-xl font-medium opacity-90">${user.storeDescription || 'O seu próximo carro está aqui.'}</p>
+        <div class="relative z-10 text-center px-4 max-w-4xl mx-auto text-white">
+            <h1 class="text-4xl md:text-7xl font-black mb-6 drop-shadow-2xl uppercase tracking-tighter">${user.storeName || 'Bem-vindo'}</h1>
+            <p class="text-lg md:text-2xl font-medium opacity-90 drop-shadow-md italic">"${user.storeDescription || 'O seu próximo carro está aqui.'}"</p>
         </div>
     </div>
 
-    <!-- Main -->
-    <main id="stock" class="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+    <main id="stock" class="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
             <div>
-                <h2 class="text-3xl font-bold">Nosso Estoque</h2>
-                <p class="text-gray-500 mt-2">Confira nossos veículos disponíveis</p>
+                <h2 class="text-4xl font-black text-gray-900 uppercase tracking-tighter">Nosso Estoque</h2>
+                <div class="w-20 h-1.5 bg-primary mt-2 rounded-full"></div>
             </div>
-            <div class="relative w-full md:w-96">
+            <div class="relative w-full md:w-[400px]">
                 <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
-                <input type="text" id="searchInput" placeholder="Buscar carro..." class="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium">
+                <input type="text" id="searchInput" placeholder="Qual carro você procura?" class="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-4 focus:ring-primary/10 outline-none transition-all font-medium">
             </div>
         </div>
 
-        <!-- Grid -->
         <div id="vehicleGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            <div class="col-span-full py-20 text-center"><div class="inline-block w-8 h-8 border-4 border-gray-200 border-t-primary rounded-full animate-spin"></div></div>
+            <div class="col-span-full py-32 text-center items-center justify-center flex flex-col gap-4">
+                <div class="w-12 h-12 border-4 border-gray-100 border-t-primary rounded-full animate-spin"></div>
+                <p class="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Carregando estoque atualizado...</p>
+            </div>
         </div>
     </main>
 
-    <!-- Modal -->
-    <div id="vehicleModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-hidden">
-        <div class="bg-white w-full max-w-6xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative">
-            <button onclick="closeModal()" class="absolute top-4 right-4 z-50 bg-black/50 p-2 rounded-full text-white backdrop-blur-md">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <div id="modalImages" class="w-full md:w-3/5 bg-black relative flex items-center justify-center h-[40vh] md:h-auto"></div>
-            <div id="modalContent" class="w-full md:w-2/5 p-6 md:p-8 bg-white overflow-y-auto max-h-[60vh] md:max-h-full scrollbar-hide"></div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer id="footer" class="bg-gray-900 text-white py-16">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between gap-12">
-            <div class="max-w-xs">
-                <h3 class="text-2xl font-bold mb-6">${user.storeName}</h3>
-                <p class="text-gray-400 text-sm">Qualidade e confiança na compra do seu veículo.</p>
+    <footer id="footer" class="bg-gray-900 text-white py-20 px-4">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
+            <div class="space-y-6">
+                <div class="flex items-center gap-3">
+                    ${user.logoUrl ? `<img src="${user.logoUrl.startsWith('http') ? user.logoUrl : fileBaseUrl + user.logoUrl}" class="h-10 w-auto brightness-0 invert" />` : `<span class="text-2xl font-black uppercase tracking-tighter">${user.storeName}</span>`}
+                </div>
+                <p class="text-gray-400 text-sm leading-relaxed">${user.storeDescription || 'Especialistas em realizar sonhos sobre rodas.'}</p>
             </div>
+            
+            <div id="about">
+                <h4 class="text-lg font-bold mb-6 flex items-center gap-2 text-primary">Sobre Nós</h4>
+                <p class="text-gray-400 text-sm leading-relaxed">${user.address ? `Localizados em: ${user.address}` : 'Tradição e confiança na venda de veículos selecionados.'}</p>
+            </div>
+
             <div>
-                <h4 class="font-bold mb-6 uppercase text-xs tracking-widest text-gray-500">Contato</h4>
-                <div class="space-y-4 text-gray-400 text-sm">
-                    ${user.phone ? `<p class="flex items-center gap-3"><i data-lucide="message-circle" class="w-5 h-5 text-green-500"></i> ${user.phone}</p>` : ''}
-                    ${user.address ? `<p class="flex items-center gap-3"><i data-lucide="map-pin" class="w-5 h-5 text-red-500"></i> ${user.address}</p>` : ''}
+                <h3 class="text-lg font-bold mb-6 flex items-center gap-2 text-primary">Contato</h3>
+                <div class="space-y-4">
+                    ${user.phone ? `<a href="https://wa.me/${user.phone.replace(/\D/g, '')}" class="flex items-center gap-3 text-gray-400 hover:text-white transition-colors"><i data-lucide="phone" class="w-5 h-5"></i> ${user.phone}</a>` : ''}
+                    <div class="flex items-center gap-3 text-gray-400"><i data-lucide="map-pin" class="w-5 h-5"></i> ${user.address || 'Consulte nosso endereço'}</div>
                 </div>
             </div>
         </div>
-        <div class="max-w-7xl mx-auto border-t border-gray-800 mt-16 pt-8 text-center text-gray-500 text-xs">
+        <div class="max-w-7xl mx-auto border-t border-white/5 mt-16 pt-8 text-center text-gray-600 text-[10px] font-bold uppercase tracking-widest">
              © <script>document.write(new Date().getFullYear())</script> ${user.storeName}. Tecnologia Zapicar.
         </div>
     </footer>
 
+    <div id="vehicleModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md overflow-hidden animate-in fade-in duration-300">
+        <div class="bg-white w-full max-w-6xl h-[90vh] rounded-[2rem] overflow-hidden shadow-2xl flex flex-col md:flex-row relative">
+            <button onclick="closeModal()" class="absolute top-6 right-6 z-50 bg-black/50 hover:bg-black p-2 rounded-full text-white backdrop-blur-md transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div id="modalImages" class="w-full md:w-3/5 bg-black relative flex items-center justify-center h-[50vh] md:h-auto border-r border-gray-100"></div>
+            <div id="modalContent" class="w-full md:w-2/5 p-8 md:p-12 bg-white overflow-y-auto scrollbar-hide flex flex-col"></div>
+        </div>
+    </div>
+
     <script>
         const API_URL = '${apiUrl}';
+        const FILE_URL = '${fileBaseUrl}';
         const STORE_SLUG = '${slug}';
         let allVehicles = [];
 
@@ -125,30 +132,42 @@ export class UsersService implements OnModuleInit {
                 renderVehicles(allVehicles);
                 lucide.createIcons();
             } catch (e) {
-                console.error(e);
+                console.error('Erro de conexão:', e);
+                document.getElementById('vehicleGrid').innerHTML = \`
+                    <div class="col-span-full py-20 text-center space-y-4">
+                        <p class="text-gray-400">Não foi possível carregar os dados diretamente do arquivo local devido a restrições do navegador.</p>
+                        <p class="text-xs text-gray-500 bg-gray-100 p-4 rounded-xl inline-block max-w-md">Para visualizar corretamente, suba este arquivo para uma hospedagem ou utilize um servidor local (como "npx serve .").</p>
+                    </div>
+                \`;
             }
         }
 
         function renderVehicles(list) {
             const grid = document.getElementById('vehicleGrid');
+            if (list.length === 0) {
+                grid.innerHTML = '<div class="col-span-full py-20 text-center text-gray-400">Nenhum veículo disponível no momento.</div>';
+                return;
+            }
             grid.innerHTML = list.map(v => \`
-                <div onclick="openModal('\${v.id}')" class="bg-white rounded-3xl overflow-hidden cursor-pointer hover:-translate-y-2 transition-transform shadow-sm hover:shadow-xl border border-gray-100 flex flex-col">
-                    <div class="aspect-[4/3] relative bg-gray-200">
-                        <img src="\${v.images && v.images[0] ? (v.images[0].startsWith('http') ? v.images[0] : API_URL + v.images[0]) : ''}" class="w-full h-full object-cover">
-                        <div class="absolute top-4 right-4 bg-white/90 px-3 py-1 rounded-full text-xs font-bold">\${v.year}</div>
+                <div onclick=\"openModal('\${v.id}')\" class=\"group bg-white rounded-3xl overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-500 border border-gray-100 flex flex-col\">
+                    <div class=\"aspect-[4/3] relative bg-gray-100 overflow-hidden\">
+                        <img src=\"\${v.images && v.images[0] ? (v.images[0].startsWith('http') ? v.images[0] : FILE_URL + v.images[0]) : ''}\" class=\"w-full h-full object-cover group-hover:scale-110 transition-transform duration-700\">
+                        <div class=\"absolute top-4 right-4 bg-white/95 px-3 py-1 rounded-full text-[10px] font-black uppercase\">\${v.year}</div>
                     </div>
-                    <div class="p-6 flex-1 flex flex-col">
-                        <p class="text-xs font-bold text-gray-400 uppercase mb-1">\${v.brand}</p>
-                        <h3 class="text-xl font-bold text-gray-900 truncate">\${v.name}</h3>
-                        <p class="text-sm text-gray-500 mb-4">\${v.model}</p>
-                        <div class="flex items-center justify-between mt-auto">
-                            <p class="text-2xl font-black text-primary">R$ \${Number(v.price).toLocaleString('pt-BR')}</p>
-                            <div class="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center"><i data-lucide="chevron-right"></i></div>
+                    <div class=\"p-6 flex-1 flex flex-col\">
+                        <p class=\"text-[10px] font-black text-primary uppercase mb-1 tracking-widest\">\${v.brand}</p>
+                        <h3 class=\"text-xl font-bold text-gray-900 group-hover:text-primary transition-colors tracking-tighter\">\${v.name}</h3>
+                        <p class=\"text-xs text-gray-500 mb-6 font-medium italic\">\${v.model}</p>
+                        <div class=\"mt-auto pt-6 border-t border-gray-50 flex items-center justify-between\">
+                            <div class=\"flex flex-col\">
+                                <p class=\"text-[10px] text-gray-400 font-bold uppercase tracking-widest\">Valor</p>
+                                <p class=\"text-2xl font-black text-gray-900\">R$ \${Number(v.price).toLocaleString('pt-BR')}</p>
+                            </div>
+                            <div class=\"w-10 h-10 rounded-2xl bg-gray-900 text-white flex items-center justify-center group-hover:bg-primary transition-colors duration-300\"><i data-lucide=\"chevron-right\" class=\"w-5 h-5\"></i></div>
                         </div>
                     </div>
                 </div>
             \`).join('');
-            lucide.createIcons();
         }
 
         document.getElementById('searchInput').addEventListener('input', e => {
@@ -159,6 +178,7 @@ export class UsersService implements OnModuleInit {
                 v.model.toLowerCase().includes(term)
             );
             renderVehicles(filtered);
+            lucide.createIcons();
         });
 
         function openModal(id) {
@@ -168,25 +188,38 @@ export class UsersService implements OnModuleInit {
             const contentDiv = document.getElementById('modalContent');
 
             imagesDiv.innerHTML = v.images.map((img, i) => \`
-                <img src="\${img.startsWith('http') ? img : API_URL + img}" class="\${i === 0 ? '' : 'hidden'} w-full h-full object-contain" id="modalImg-\${i}">
+                <img src=\"\${img.startsWith('http') ? img : FILE_URL + img}\" class=\"\${i === 0 ? '' : 'hidden'} w-full h-full object-contain\" id=\"modalImg-\${i}\">
             \`).join('');
 
             if (v.images.length > 1) {
                 imagesDiv.innerHTML += \`
-                    <button onclick="changeModalImg(-1, \${v.images.length}, event)" class="absolute left-4 p-2 rounded-full bg-white/20 text-white"><i data-lucide="chevron-left"></i></button>
-                    <button onclick="changeModalImg(1, \${v.images.length}, event)" class="absolute right-4 p-2 rounded-full bg-white/20 text-white"><i data-lucide="chevron-right"></i></button>
+                    <button onclick=\"changeModalImg(-1, \${v.images.length}, event)\" class=\"absolute left-6 p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all\"><i data-lucide=\"chevron-left\"></i></button>
+                    <button onclick=\"changeModalImg(1, \${v.images.length}, event)\" class=\"absolute right-6 p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all\"><i data-lucide=\"chevron-right\"></i></button>
                 \`;
             }
 
             contentDiv.innerHTML = \`
-                <div class="mb-6"><p class="text-sm font-bold text-gray-400 uppercase mb-1">\${v.brand}</p><h2 class="text-3xl font-bold text-gray-900">\${v.name}</h2></div>
-                <p class="text-4xl font-black text-primary mb-8">R$ \${Number(v.price).toLocaleString('pt-BR')}</p>
-                <div class="grid grid-cols-2 gap-4 mb-8">
-                    <div class="bg-gray-50 p-4 rounded-xl text-center"><p class="text-xs text-gray-500 font-bold uppercase mb-1">Ano</p><p class="font-bold">\${v.year}</p></div>
-                    <div class="bg-gray-50 p-4 rounded-xl text-center"><p class="text-xs text-gray-500 font-bold uppercase mb-1">KM</p><p class="font-bold">\${v.km ? v.km.toLocaleString() : '---'}</p></div>
+                <div class=\"mb-8\">
+                    <p class=\"text-xs font-black text-primary uppercase tracking-[0.2em] mb-2\">\${v.brand} • \${v.year}</p>
+                    <h2 class=\"text-4xl font-black text-gray-900 uppercase tracking-tighter\">\${v.name}</h2>
+                    <p class=\"text-lg text-gray-500 font-medium italic\">\${v.model}</p>
                 </div>
-                <div class="mb-8 p-4 bg-gray-50 rounded-2xl"><p class="text-gray-600 text-sm leading-relaxed">\${v.description || 'Sem descrição.'}</p></div>
-                <a href="https://wa.me/${user.phone ? user.phone.replace(/\D/g, '') : ''}?text=Olá! Segue o interesse no \${v.brand} \${v.name}" target="_blank" class="block w-full py-4 bg-[#25D366] text-white rounded-xl font-bold text-center">Tenho Interesse</a>
+                
+                <p class=\"text-5xl font-black text-gray-900 mb-10 tracking-tighter\">R$ \${Number(v.price).toLocaleString('pt-BR')}</p>
+                
+                <div class=\"grid grid-cols-2 gap-4 mb-10\">
+                    <div class=\"bg-gray-50 p-4 rounded-3xl border border-gray-100\"><p class=\"text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1\">Quilometragem</p><p class=\"text-xl font-black text-gray-900\">\${v.km ? v.km.toLocaleString() + ' km' : '---'}</p></div>
+                    <div class=\"bg-gray-50 p-4 rounded-3xl border border-gray-100\"><p class=\"text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1\">Ano Modelo</p><p class=\"text-xl font-black text-gray-900\">\${v.year}</p></div>
+                </div>
+
+                <div class=\"mb-10 text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-4\">
+                    <i data-lucide=\"info\" class=\"w-4 h-4\"></i> Descrição do especialista
+                </div>
+                <div class=\"mb-10 p-6 bg-gray-50 rounded-[2rem] border border-gray-100 italic text-gray-600 font-medium leading-relaxed\">
+                    \"\${v.description || 'Sem descrição detalhada.'}\"
+                </div>
+
+                <a href=\"https://wa.me/${user.phone ? user.phone.replace(/\D/g, '') : ''}?text=Olá! Segue o interesse no \${v.brand} \${v.name}\" target=\"_blank\" class=\"mt-auto block w-full py-5 bg-[#25D366] text-white rounded-[1.5rem] font-black text-center uppercase tracking-widest shadow-xl shadow-green-500/30 hover:scale-[1.02] transition-all\">Tenho Interesse</a>
             \`;
 
             modal.classList.remove('hidden');

@@ -37,6 +37,8 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
     // Marketing Data
     const [marketingText, setMarketingText] = useState('');
     const [copied, setCopied] = useState(false);
+    const [flyerColor, setFlyerColor] = useState('#22c55e');
+    const [selectedFlyerImage, setSelectedFlyerImage] = useState(0);
 
     // Initialize
     useEffect(() => {
@@ -89,6 +91,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
             if (res.ok) {
                 const user = await res.json();
                 setStore(user);
+                if (user.primaryColor) setFlyerColor(user.primaryColor);
             }
         } catch (e) {
             console.error('Error fetching store', e);
@@ -295,7 +298,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
         if (!flyerRef.current) return;
         setLoading(true);
         try {
-            const dataUrl = await toPng(flyerRef.current, { cacheBust: true, pixelRatio: 2 });
+            const dataUrl = await toPng(flyerRef.current, { cacheBust: true, pixelRatio: 4 });
             const link = document.createElement('a');
             link.download = `flyer-${formData.name || 'car'}.png`;
             link.href = dataUrl;
@@ -605,68 +608,126 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                     </div>
                                 </div>
 
+                                <div className="space-y-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Cor de Destaque</label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['#22c55e', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#000000'].map(c => (
+                                                <button
+                                                    key={c}
+                                                    onClick={() => setFlyerColor(c)}
+                                                    className={`w-8 h-8 rounded-full border-2 transition-transform active:scale-95 ${flyerColor === c ? 'border-gray-900 ring-2 ring-gray-200' : 'border-transparent'}`}
+                                                    style={{ backgroundColor: c }}
+                                                />
+                                            ))}
+                                            <div className="relative w-8 h-8 rounded-full border border-gray-200 overflow-hidden">
+                                                <input
+                                                    type="color"
+                                                    value={flyerColor}
+                                                    onChange={(e) => setFlyerColor(e.target.value)}
+                                                    className="absolute inset-[-5px] w-[200%] h-[200%] cursor-pointer"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {existingImages.length > 1 && (
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Selecionar Imagem</label>
+                                            <div className="flex gap-2 overflow-x-auto pb-2">
+                                                {existingImages.map((img, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => setSelectedFlyerImage(idx)}
+                                                        className={`relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${selectedFlyerImage === idx ? 'border-green-500 ring-2 ring-green-100' : 'border-transparent opacity-60'}`}
+                                                    >
+                                                        <img src={img.startsWith('http') ? img : `${API_URL}${img}`} className="w-full h-full object-cover" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
                                 {/* Flyer Preview (The target for capture) */}
                                 <div className="flex justify-center">
                                     <div
                                         ref={flyerRef}
-                                        className="w-[300px] h-[533px] bg-black relative overflow-hidden shadow-2xl rounded-xl"
-                                        style={{ backgroundImage: `url(${existingImages[0]?.startsWith('http') ? existingImages[0] : (API_URL + existingImages[0])})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                                        className="w-[300px] h-[533px] bg-gray-900 relative overflow-hidden shadow-2xl rounded-xl"
                                     >
-                                        {/* Overlay Gradient */}
-                                        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                                        {/* Background Image */}
+                                        <div
+                                            className="absolute inset-0 transition-all duration-500"
+                                            style={{
+                                                backgroundImage: `url(${existingImages[selectedFlyerImage]?.startsWith('http') ? existingImages[selectedFlyerImage] : (API_URL + existingImages[selectedFlyerImage])})`,
+                                                backgroundSize: 'cover',
+                                                backgroundPosition: 'center'
+                                            }}
+                                        />
+
+                                        {/* Dynamic Overlays for Visibility */}
+                                        <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-black via-black/40 to-transparent" />
+                                        <div className="absolute inset-x-0 top-0 h-[30%] bg-gradient-to-b from-black/60 to-transparent" />
+
+                                        {/* Subtle pattern or border */}
+                                        <div className="absolute inset-4 border border-white/10 rounded-lg pointer-events-none" />
 
                                         {/* Store Header with Logo */}
-                                        <div className="absolute top-6 inset-x-0 flex flex-col items-center">
+                                        <div className="absolute top-8 inset-x-0 flex flex-col items-center">
                                             {store?.logoUrl ? (
-                                                <div className="bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-xl mb-2">
+                                                <div className="bg-white p-2.5 rounded-2xl shadow-2xl mb-2 max-w-[140px]">
                                                     <img
                                                         src={store.logoUrl.startsWith('http') ? store.logoUrl : `${API_URL}${store.logoUrl}`}
-                                                        className="h-10 w-auto object-contain"
+                                                        className="h-8 md:h-10 w-auto object-contain"
                                                         alt="Logo"
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-                                                    <p className="text-white text-[10px] font-black uppercase tracking-[0.2em]">{store?.storeName || 'Sua Loja'}</p>
+                                                <div className="px-5 py-2.5 bg-white/10 backdrop-blur-xl rounded-full border border-white/20 shadow-xl">
+                                                    <p className="text-white text-[11px] font-black uppercase tracking-[0.25em]">{store?.storeName || 'Sua Loja'}</p>
                                                 </div>
                                             )}
                                         </div>
 
                                         {/* Car Info */}
-                                        <div className="absolute bottom-10 inset-x-6 text-white">
-                                            <p className="text-2xl font-black uppercase leading-tight drop-shadow-lg">
-                                                {formData.brand} <br />
-                                                <span className="text-green-400">{formData.name}</span>
-                                            </p>
-
-                                            <div className="flex flex-wrap gap-2 mt-4">
-                                                <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-[9px] font-bold uppercase">
-                                                    Ano {formData.year}
-                                                </div>
-                                                <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-[9px] font-bold uppercase">
-                                                    {formData.km} KM
-                                                </div>
-                                                <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-[9px] font-bold uppercase">
-                                                    {formData.fuel}
-                                                </div>
-                                                <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-lg border border-white/20 text-[9px] font-bold uppercase">
-                                                    {formData.transmission}
-                                                </div>
+                                        <div className="absolute bottom-8 inset-x-6 text-white">
+                                            <div className="space-y-1 mb-6">
+                                                <p className="text-3xl font-black uppercase leading-[0.9] tracking-tighter drop-shadow-2xl">
+                                                    {formData.brand} <br />
+                                                    <span style={{ color: flyerColor }}>{formData.name}</span>
+                                                </p>
                                             </div>
 
-                                            <div className="mt-8 flex flex-col gap-1">
-                                                <p className="text-[10px] font-black uppercase text-green-400 tracking-[0.2em] drop-shadow-md">Oportunidade Única</p>
-                                                <p className="text-4xl font-black tabular-nums drop-shadow-2xl">
+                                            <div className="flex flex-wrap gap-1.5 mt-4">
+                                                {[
+                                                    { label: `Ano ${formData.year}` },
+                                                    { label: `${formData.km} KM` },
+                                                    { label: formData.fuel },
+                                                    { label: formData.transmission }
+                                                ].map((badge, bidx) => (
+                                                    <div key={bidx} className="px-2.5 py-1.5 bg-black/40 backdrop-blur-md rounded-lg border border-white/10 text-[9px] font-bold uppercase tracking-wider">
+                                                        {badge.label}
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <div className="mt-8 flex flex-col gap-0.5">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80" style={{ color: flyerColor }}>Oportunidade Única</p>
+                                                <p className="text-4xl font-black tabular-nums tracking-tighter drop-shadow-2xl">
                                                     R$ {formData.price.includes(',') ? formData.price : new Intl.NumberFormat('pt-BR').format(Number(formData.price))}
                                                 </p>
                                             </div>
 
-                                            <div className="mt-8 p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 flex items-center justify-between">
-                                                <div className="flex flex-col">
-                                                    <p className="text-[8px] font-black uppercase text-white/50 tracking-widest">Postado por</p>
-                                                    <p className="text-[12px] font-black uppercase tracking-wider">{store?.storeName || 'Confira no Site'}</p>
+                                            <div className="mt-8 p-4 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-between shadow-2xl relative overflow-hidden group">
+                                                <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                <div className="flex flex-col relative z-10">
+                                                    <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">Postado por</p>
+                                                    <p className="text-[13px] font-black uppercase tracking-tight">{store?.storeName || 'Zapcar'}</p>
                                                 </div>
-                                                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white/20">
+                                                <div
+                                                    className="w-11 h-11 rounded-full flex items-center justify-center shadow-2xl border-2 border-white/10 relative z-10 transition-transform group-hover:scale-110"
+                                                    style={{ backgroundColor: flyerColor }}
+                                                >
                                                     <Instagram className="w-5 h-5 text-white" />
                                                 </div>
                                             </div>
@@ -677,7 +738,8 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                 <button
                                     onClick={downloadFlyer}
                                     disabled={loading}
-                                    className="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-green-700 transition-all shadow-xl shadow-green-600/20 active:scale-95 disabled:opacity-50"
+                                    className="w-full text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110"
+                                    style={{ backgroundColor: flyerColor, boxShadow: `0 20px 25px -5px ${flyerColor}44` }}
                                 >
                                     <Upload className="w-5 h-5 rotate-180" />
                                     {loading ? 'Gerando...' : 'Baixar Flyer para Stories'}

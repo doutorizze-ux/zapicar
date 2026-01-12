@@ -39,6 +39,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
     const [copied, setCopied] = useState(false);
     const [flyerColor, setFlyerColor] = useState('#22c55e');
     const [selectedFlyerImage, setSelectedFlyerImage] = useState(0);
+    const [flyerFormat, setFlyerFormat] = useState<'story' | 'feed'>('story');
 
     // Initialize
     useEffect(() => {
@@ -298,23 +299,66 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
         if (!flyerRef.current) return;
         setLoading(true);
         try {
-            // Pequeno delay para garantir que imagens foram renderizadas
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Force a re-render/wait for images
+            await new Promise(resolve => setTimeout(resolve, 800));
 
-            const dataUrl = await toPng(flyerRef.current, {
+            const options = {
                 cacheBust: true,
-                pixelRatio: 3, // Reduzido de 4 para 3 para evitar limites de canvas em celulares
-                skipFonts: false,
-                backgroundColor: '#111827'
-            });
+                pixelRatio: 3,
+                backgroundColor: '#0f172a', // Matching flye background
+                style: {
+                    transform: 'scale(1)',
+                    transformOrigin: 'top left'
+                }
+            };
+
+            const dataUrl = await toPng(flyerRef.current, options);
 
             const link = document.createElement('a');
-            link.download = `flyer-${formData.name || 'car'}.png`;
+            link.download = `flyer-${flyerFormat}-${formData.name || 'car'}.png`;
             link.href = dataUrl;
             link.click();
         } catch (err) {
             console.error('Error generating flyer', err);
-            alert('Erro ao gerar flyer. Tente novamente.');
+            alert('Erro ao gerar flyer. Tente novamente ou use outro navegador.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const shareFlyer = async () => {
+        if (!flyerRef.current) return;
+        setLoading(true);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const dataUrl = await toPng(flyerRef.current, {
+                cacheBust: true,
+                pixelRatio: 2,
+                backgroundColor: '#0f172a',
+                style: { transform: 'scale(1)' }
+            });
+
+            // Improved blob conversion
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            const file = new File([blob], `flyer-${formData.brand}-${formData.name}.png`, { type: 'image/png' });
+
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Flyer do Veículo',
+                    text: `Confira este ${formData.brand} ${formData.name}!`
+                });
+            } else {
+                // Fallback
+                const link = document.createElement('a');
+                link.download = `flyer-${formData.name}.png`;
+                link.href = dataUrl;
+                link.click();
+            }
+        } catch (err) {
+            console.error('Error sharing flyer', err);
+            alert('Seu dispositivo não suporta o compartilhamento direto.');
         } finally {
             setLoading(false);
         }
@@ -618,24 +662,43 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                 </div>
 
                                 <div className="space-y-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Cor de Destaque</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {['#22c55e', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#000000'].map(c => (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Formato</label>
+                                            <div className="flex gap-2">
                                                 <button
-                                                    key={c}
-                                                    onClick={() => setFlyerColor(c)}
-                                                    className={`w-8 h-8 rounded-full border-2 transition-transform active:scale-95 ${flyerColor === c ? 'border-gray-900 ring-2 ring-gray-200' : 'border-transparent'}`}
-                                                    style={{ backgroundColor: c }}
-                                                />
-                                            ))}
-                                            <div className="relative w-8 h-8 rounded-full border border-gray-200 overflow-hidden">
-                                                <input
-                                                    type="color"
-                                                    value={flyerColor}
-                                                    onChange={(e) => setFlyerColor(e.target.value)}
-                                                    className="absolute inset-[-5px] w-[200%] h-[200%] cursor-pointer"
-                                                />
+                                                    onClick={() => setFlyerFormat('story')}
+                                                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${flyerFormat === 'story' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                                                >
+                                                    Story (9:16)
+                                                </button>
+                                                <button
+                                                    onClick={() => setFlyerFormat('feed')}
+                                                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${flyerFormat === 'feed' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                                                >
+                                                    Feed (1:1)
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-gray-500 uppercase mb-2 block">Cor de Destaque</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {['#22c55e', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#000000'].map(c => (
+                                                    <button
+                                                        key={c}
+                                                        onClick={() => setFlyerColor(c)}
+                                                        className={`w-8 h-8 rounded-full border-2 transition-transform active:scale-95 ${flyerColor === c ? 'border-gray-900 ring-2 ring-gray-200' : 'border-transparent'}`}
+                                                        style={{ backgroundColor: c }}
+                                                    />
+                                                ))}
+                                                <div className="relative w-8 h-8 rounded-full border border-gray-200 overflow-hidden">
+                                                    <input
+                                                        type="color"
+                                                        value={flyerColor}
+                                                        onChange={(e) => setFlyerColor(e.target.value)}
+                                                        className="absolute inset-[-5px] w-[200%] h-[200%] cursor-pointer"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -664,14 +727,15 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                         className="relative"
                                         style={{
                                             width: '300px',
-                                            height: '533px',
+                                            height: flyerFormat === 'story' ? '533px' : '300px',
                                             transform: 'scale(1)',
-                                            maxWidth: '100%'
+                                            maxWidth: '100%',
+                                            transition: 'height 0.3s ease'
                                         }}
                                     >
                                         <div
                                             ref={flyerRef}
-                                            className="w-[300px] h-[533px] bg-slate-950 relative overflow-hidden shadow-2xl rounded-xl flex flex-col"
+                                            className={`bg-slate-950 relative overflow-hidden shadow-2xl rounded-xl flex flex-col ${flyerFormat === 'story' ? 'w-[300px] h-[533px]' : 'w-[300px] h-[300px]'}`}
                                         >
                                             {/* Advanced Background: Blurred + Darkened */}
                                             {existingImages[selectedFlyerImage] && (
@@ -687,26 +751,26 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                             )}
 
                                             {/* Store Header */}
-                                            <div className="relative z-20 pt-8 pb-4 flex flex-col items-center">
+                                            <div className={`relative z-20 flex flex-col items-center ${flyerFormat === 'story' ? 'pt-8 pb-4' : 'pt-4 pb-2'}`}>
                                                 {store?.logoUrl ? (
-                                                    <div className="bg-white p-2 rounded-xl shadow-lg max-w-[120px]">
+                                                    <div className="bg-white p-2 rounded-xl shadow-lg max-w-[100px]">
                                                         <img
                                                             src={store.logoUrl.startsWith('http') ? store.logoUrl : `${API_URL}${store.logoUrl}`}
-                                                            className="h-7 w-auto object-contain"
+                                                            className={`${flyerFormat === 'story' ? 'h-7' : 'h-5'} w-auto object-contain`}
                                                             crossOrigin="anonymous"
                                                             alt="Logo"
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <div className="px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-                                                        <p className="text-white text-[10px] font-black uppercase tracking-widest">{store?.storeName || 'Sua Loja'}</p>
+                                                    <div className="px-4 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                                                        <p className="text-white text-[8px] font-black uppercase tracking-widest">{store?.storeName || 'Sua Loja'}</p>
                                                     </div>
                                                 )}
                                             </div>
 
                                             {/* HERO IMAGE: The Car (Optimized visibility) */}
-                                            <div className="relative z-10 px-4 mt-2">
-                                                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl bg-slate-900 flex items-center justify-center">
+                                            <div className={`relative z-10 px-4 ${flyerFormat === 'story' ? 'mt-1' : 'mt-0'}`}>
+                                                <div className={`relative overflow-hidden border-2 border-white/10 shadow-2xl bg-slate-900 flex items-center justify-center ${flyerFormat === 'story' ? 'h-[180px] rounded-xl' : 'aspect-video rounded-2xl'}`}>
                                                     {existingImages[selectedFlyerImage] ? (
                                                         <img
                                                             src={existingImages[selectedFlyerImage]?.startsWith('http') ? existingImages[selectedFlyerImage] : (API_URL + existingImages[selectedFlyerImage])}
@@ -718,57 +782,62 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                         <Car className="w-12 h-12 text-white/20" />
                                                     )}
 
-                                                    {/* Badge de Destaque no Carro */}
-                                                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold text-slate-900 shadow-lg">
+                                                    <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-0.5 rounded-full text-[8px] font-black text-slate-950 shadow-md uppercase">
                                                         {formData.category || 'Seminovo'}
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {/* Info Section */}
-                                            <div className="relative z-20 flex-1 px-5 py-4 flex flex-col justify-between text-white">
-                                                <div className="space-y-4">
-                                                    <div className="space-y-1">
-                                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60" style={{ color: flyerColor }}>Oportunidade</p>
-                                                        <h4 className="text-2xl font-black uppercase leading-tight tracking-tighter">
-                                                            {formData.brand} <span className="block" style={{ color: flyerColor }}>{formData.name}</span>
+                                            <div className="relative z-20 flex-1 px-4 py-3 flex flex-col justify-between text-white overflow-hidden">
+                                                <div className={`${flyerFormat === 'story' ? 'space-y-4' : 'space-y-2'}`}>
+                                                    <div className="space-y-0.5">
+                                                        <p className="text-[8px] font-black uppercase tracking-[0.3em] opacity-60" style={{ color: flyerColor }}>Oportunidade</p>
+                                                        <h4 className={`${flyerFormat === 'story' ? 'text-xl' : 'text-sm'} font-black uppercase leading-tight tracking-tighter`}>
+                                                            {formData.brand} <span className={flyerFormat === 'story' ? 'block' : ''} style={{ color: flyerColor }}>{formData.name}</span>
                                                         </h4>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        {[
-                                                            { label: 'Ano', val: formData.year },
-                                                            { label: 'KM', val: `${formData.km}` },
-                                                            { label: 'Câmbio', val: formData.transmission },
-                                                            { label: 'Motor', val: formData.fuel }
-                                                        ].map((spec, i) => (
-                                                            <div key={i} className="flex flex-col p-2 bg-white/5 border border-white/10 rounded-xl">
-                                                                <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">{spec.label}</span>
-                                                                <span className="text-[11px] font-black truncate">{spec.val}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                                    {flyerFormat === 'story' && (
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            {[
+                                                                { label: 'Ano', val: formData.year },
+                                                                { label: 'KM', val: `${formData.km}` },
+                                                                { label: 'Câmbio', val: formData.transmission },
+                                                                { label: 'Motor', val: formData.fuel }
+                                                            ].map((spec, i) => (
+                                                                <div key={i} className="flex flex-col p-1.5 bg-white/5 border border-white/10 rounded-xl">
+                                                                    <span className="text-[6px] font-bold text-white/40 uppercase tracking-widest leading-none mb-1">{spec.label}</span>
+                                                                    <span className="text-[9px] font-black truncate leading-none">{spec.val}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
 
-                                                <div className="mt-4 space-y-4">
-                                                    <div>
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">Valor Especial</p>
-                                                        <p className="text-3xl font-black tracking-tighter tabular-nums drop-shadow-lg">
-                                                            R$ {formData.price.includes(',') ? formData.price : new Intl.NumberFormat('pt-BR').format(Number(formData.price))}
-                                                        </p>
+                                                <div className={`${flyerFormat === 'story' ? 'mt-auto space-y-3 pb-2' : 'mt-2 space-y-2'}`}>
+                                                    <div className="flex items-end justify-between gap-2">
+                                                        <div className="w-full">
+                                                            <p className="text-[8px] font-bold uppercase tracking-widest opacity-40">Valor Especial</p>
+                                                            <div className="flex items-baseline justify-between w-full">
+                                                                <p className={`${flyerFormat === 'story' ? 'text-3xl' : 'text-lg'} font-black tracking-tighter tabular-nums drop-shadow-lg text-white`}>
+                                                                    R$ {formData.price.includes(',') ? formData.price : new Intl.NumberFormat('pt-BR').format(Number(formData.price))}
+                                                                </p>
+                                                            </div>
+                                                        </div>
                                                     </div>
 
                                                     {/* Footer Branding */}
-                                                    <div className="p-3 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 flex items-center justify-between">
+                                                    <div className={`${flyerFormat === 'story' ? 'p-2.5' : 'p-2'} bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-between`}>
                                                         <div className="flex flex-col">
-                                                            <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest">Fale Conosco</p>
-                                                            <p className="text-xs font-black truncate max-w-[150px]">{store?.storeName || 'Zapcar'}</p>
+                                                            <p className="text-[6px] font-bold text-white/50 uppercase tracking-widest">Fale Conosco</p>
+                                                            <p className={`${flyerFormat === 'story' ? 'text-[10px]' : 'text-[9px]'} font-black truncate max-w-[150px]`}>{store?.storeName || 'Zapcar'}</p>
                                                         </div>
                                                         <div
-                                                            className="w-9 h-9 rounded-full flex items-center justify-center shadow-lg border border-white/20"
+                                                            className={`${flyerFormat === 'story' ? 'w-7 h-7' : 'w-6 h-6'} rounded-full flex items-center justify-center shadow-lg border border-white/20`}
                                                             style={{ backgroundColor: flyerColor }}
                                                         >
-                                                            <Instagram className="w-5 h-5 text-white" />
+                                                            <Instagram className={`${flyerFormat === 'story' ? 'w-3.5 h-3.5' : 'w-3 h-3'} text-white`} />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -776,23 +845,34 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
 
                                             {/* Design Elements */}
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/5 to-transparent rounded-bl-[100px] pointer-events-none" />
-                                            <div className="absolute inset-4 border border-white/5 rounded-2xl pointer-events-none" />
+                                            <div className="absolute inset-3 border border-white/5 rounded-2xl pointer-events-none" />
                                         </div>
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={downloadFlyer}
-                                    disabled={loading}
-                                    className="w-full text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110"
-                                    style={{ backgroundColor: flyerColor, boxShadow: `0 20px 25px -5px ${flyerColor}44` }}
-                                >
-                                    <Upload className="w-5 h-5 rotate-180" />
-                                    {loading ? 'Gerando...' : 'Baixar Flyer para Stories'}
-                                </button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={downloadFlyer}
+                                        disabled={loading}
+                                        className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110 border-2 border-white/10"
+                                        style={{ backgroundColor: `${flyerColor}CC`, backdropFilter: 'blur(10px)' }}
+                                    >
+                                        <Upload className="w-5 h-5 rotate-180" />
+                                        {loading ? '...' : 'Baixar'}
+                                    </button>
+                                    <button
+                                        onClick={shareFlyer}
+                                        disabled={loading}
+                                        className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110"
+                                        style={{ backgroundColor: flyerColor, boxShadow: `0 10px 15px -3px ${flyerColor}44` }}
+                                    >
+                                        <Instagram className="w-5 h-5" />
+                                        {loading ? '...' : 'Instagram'}
+                                    </button>
+                                </div>
 
                                 <p className="text-center text-[10px] text-gray-400 uppercase font-bold tracking-widest">
-                                    Resolução sugerida: 1080x1920 (9:16)
+                                    Resolução sugerida: {flyerFormat === 'story' ? '1080x1920 (9:16)' : '1080x1080 (1:1)'}
                                 </p>
                             </div>
                         </div>

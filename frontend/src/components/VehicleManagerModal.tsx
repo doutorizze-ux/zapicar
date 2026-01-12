@@ -295,21 +295,51 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
         setTimeout(() => setCopied(false), 2000);
     };
 
+    // Helper to preload images and convert to base64 to avoid CORS/loading issues
+    const preloadImages = async (element: HTMLElement) => {
+        const images = element.querySelectorAll('img');
+        await Promise.all(Array.from(images).map(async (img) => {
+            if (img.complete && img.naturalHeight !== 0) return;
+
+            // Try to force load using fetch and base64
+            try {
+                const src = img.getAttribute('src');
+                if (src && src.startsWith('http')) {
+                    const response = await fetch(src, { mode: 'cors' });
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    await new Promise((resolve) => {
+                        reader.onloadend = () => {
+                            img.src = reader.result as string;
+                            resolve(null);
+                        }
+                        reader.readAsDataURL(blob);
+                    });
+                }
+            } catch (e) {
+                console.warn('Failed to preload image', e);
+            }
+
+            // Fallback normal wait
+            return new Promise((resolve) => {
+                if (img.complete) resolve(null);
+                img.onload = () => resolve(null);
+                img.onerror = () => resolve(null);
+            });
+        }));
+    };
+
     const downloadFlyer = async () => {
         if (!flyerRef.current) return;
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Increased delay
+            await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Ensure images are fully loaded
-            const images = flyerRef.current.querySelectorAll('img');
-            await Promise.all(Array.from(images).map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise(resolve => {
-                    img.onload = resolve;
-                    img.onerror = resolve;
-                });
-            }));
+            // Robust image preloading
+            await preloadImages(flyerRef.current);
+
+            // Extra safety wait
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const options = {
                 cacheBust: true,
@@ -343,17 +373,13 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
         if (!flyerRef.current) return;
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise(resolve => setTimeout(resolve, 500));
 
-            // Ensure images are fully loaded
-            const images = flyerRef.current.querySelectorAll('img');
-            await Promise.all(Array.from(images).map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise(resolve => {
-                    img.onload = resolve;
-                    img.onerror = resolve;
-                });
-            }));
+            // Robust image preloading
+            await preloadImages(flyerRef.current);
+
+            // Extra safety wait
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const dataUrl = await toPng(flyerRef.current, {
                 cacheBust: true,
@@ -862,7 +888,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
 
                                                     {/* Footer Branding */}
                                                     {/* Footer Branding */}
-                                                    <div className={`${flyerFormat === 'story' ? 'p-3 mb-10' : 'p-1 pb-1'} bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-between`}>
+                                                    <div className={`${flyerFormat === 'story' ? 'p-3 mb-12' : 'p-1 pb-1'} bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-between`}>
                                                         <div className="flex flex-col">
                                                             <p className="text-[5px] font-bold text-white/50 uppercase tracking-widest leading-none mb-0.5">Fale Conosco</p>
                                                             <p className={`${flyerFormat === 'story' ? 'text-[10px]' : 'text-[8px]'} font-black truncate max-w-[150px] leading-tight`}>{store?.storeName || 'Zapcar'}</p>

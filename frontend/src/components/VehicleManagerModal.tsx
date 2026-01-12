@@ -299,16 +299,19 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
         if (!flyerRef.current) return;
         setLoading(true);
         try {
-            // Force a re-render/wait for images
             await new Promise(resolve => setTimeout(resolve, 800));
 
             const options = {
                 cacheBust: true,
                 pixelRatio: 3,
-                backgroundColor: '#0f172a', // Matching flye background
+                backgroundColor: '#0f172a',
+                width: 300,
+                height: flyerFormat === 'story' ? 533 : 300,
                 style: {
                     transform: 'scale(1)',
-                    transformOrigin: 'top left'
+                    transformOrigin: 'top left',
+                    width: '300px',
+                    height: flyerFormat === 'story' ? '533px' : '300px'
                 }
             };
 
@@ -335,7 +338,13 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                 cacheBust: true,
                 pixelRatio: 2,
                 backgroundColor: '#0f172a',
-                style: { transform: 'scale(1)' }
+                width: 300,
+                height: flyerFormat === 'story' ? 533 : 300,
+                style: {
+                    transform: 'scale(1)',
+                    width: '300px',
+                    height: flyerFormat === 'story' ? '533px' : '300px'
+                }
             });
 
             // Improved blob conversion
@@ -751,26 +760,27 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                             )}
 
                                             {/* Store Header */}
-                                            <div className={`relative z-20 flex flex-col items-center ${flyerFormat === 'story' ? 'pt-8 pb-4' : 'pt-4 pb-2'}`}>
+                                            {/* Store Header */}
+                                            <div className={`relative z-20 flex flex-col items-center ${flyerFormat === 'story' ? 'pt-6 pb-2' : 'pt-3 pb-1'}`}>
                                                 {store?.logoUrl ? (
-                                                    <div className="bg-white p-2 rounded-xl shadow-lg max-w-[100px]">
+                                                    <div className="bg-white p-1.5 rounded-xl shadow-lg max-w-[90px]">
                                                         <img
                                                             src={store.logoUrl.startsWith('http') ? store.logoUrl : `${API_URL}${store.logoUrl}`}
-                                                            className={`${flyerFormat === 'story' ? 'h-7' : 'h-5'} w-auto object-contain`}
+                                                            className={`${flyerFormat === 'story' ? 'h-6' : 'h-4'} w-auto object-contain`}
                                                             crossOrigin="anonymous"
                                                             alt="Logo"
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <div className="px-4 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
-                                                        <p className="text-white text-[8px] font-black uppercase tracking-widest">{store?.storeName || 'Sua Loja'}</p>
+                                                    <div className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                                                        <p className="text-white text-[7px] font-black uppercase tracking-widest">{store?.storeName || 'Sua Loja'}</p>
                                                     </div>
                                                 )}
                                             </div>
 
-                                            {/* HERO IMAGE: The Car (Optimized visibility) */}
+                                            {/* HERO IMAGE: The Car */}
                                             <div className={`relative z-10 px-4 ${flyerFormat === 'story' ? 'mt-1' : 'mt-0'}`}>
-                                                <div className={`relative overflow-hidden border-2 border-white/10 shadow-2xl bg-slate-900 flex items-center justify-center ${flyerFormat === 'story' ? 'h-[180px] rounded-xl' : 'aspect-video rounded-2xl'}`}>
+                                                <div className={`relative overflow-hidden border-2 border-white/10 shadow-2xl bg-slate-900 flex items-center justify-center ${flyerFormat === 'story' ? 'h-[170px] rounded-xl' : 'h-[100px] w-full rounded-xl'}`}>
                                                     {existingImages[selectedFlyerImage] ? (
                                                         <img
                                                             src={existingImages[selectedFlyerImage]?.startsWith('http') ? existingImages[selectedFlyerImage] : (API_URL + existingImages[selectedFlyerImage])}
@@ -818,9 +828,9 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                 <div className={`${flyerFormat === 'story' ? 'mt-auto space-y-3 pb-2' : 'mt-2 space-y-2'}`}>
                                                     <div className="flex items-end justify-between gap-2">
                                                         <div className="w-full">
-                                                            <p className="text-[8px] font-bold uppercase tracking-widest opacity-40">Valor Especial</p>
+                                                            <p className="text-[7px] font-bold uppercase tracking-widest opacity-40">Valor Especial</p>
                                                             <div className="flex items-baseline justify-between w-full">
-                                                                <p className={`${flyerFormat === 'story' ? 'text-3xl' : 'text-lg'} font-black tracking-tighter tabular-nums drop-shadow-lg text-white`}>
+                                                                <p className={`${flyerFormat === 'story' ? 'text-3xl' : 'text-base'} font-black tracking-tighter tabular-nums drop-shadow-lg text-white`}>
                                                                     R$ {formData.price.includes(',') ? formData.price : new Intl.NumberFormat('pt-BR').format(Number(formData.price))}
                                                                 </p>
                                                             </div>
@@ -828,16 +838,16 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                     </div>
 
                                                     {/* Footer Branding */}
-                                                    <div className={`${flyerFormat === 'story' ? 'p-2.5' : 'p-2'} bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-between`}>
+                                                    <div className={`${flyerFormat === 'story' ? 'p-2.5 pb-2.5' : 'p-1 pb-1'} bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-between`}>
                                                         <div className="flex flex-col">
-                                                            <p className="text-[6px] font-bold text-white/50 uppercase tracking-widest">Fale Conosco</p>
-                                                            <p className={`${flyerFormat === 'story' ? 'text-[10px]' : 'text-[9px]'} font-black truncate max-w-[150px]`}>{store?.storeName || 'Zapcar'}</p>
+                                                            <p className="text-[5px] font-bold text-white/50 uppercase tracking-widest leading-none mb-0.5">Fale Conosco</p>
+                                                            <p className={`${flyerFormat === 'story' ? 'text-[10px]' : 'text-[8px]'} font-black truncate max-w-[150px] leading-tight`}>{store?.storeName || 'Zapcar'}</p>
                                                         </div>
                                                         <div
-                                                            className={`${flyerFormat === 'story' ? 'w-7 h-7' : 'w-6 h-6'} rounded-full flex items-center justify-center shadow-lg border border-white/20`}
+                                                            className={`${flyerFormat === 'story' ? 'w-7 h-7' : 'w-5 h-5'} rounded-full flex items-center justify-center shadow-lg border border-white/20`}
                                                             style={{ backgroundColor: flyerColor }}
                                                         >
-                                                            <Instagram className={`${flyerFormat === 'story' ? 'w-3.5 h-3.5' : 'w-3 h-3'} text-white`} />
+                                                            <Instagram className={`${flyerFormat === 'story' ? 'w-3.5 h-3.5' : 'w-2.5 h-2.5'} text-white`} />
                                                         </div>
                                                     </div>
                                                 </div>

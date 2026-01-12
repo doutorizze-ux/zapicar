@@ -299,7 +299,17 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
         if (!flyerRef.current) return;
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Increased delay
+
+            // Ensure images are fully loaded
+            const images = flyerRef.current.querySelectorAll('img');
+            await Promise.all(Array.from(images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            }));
 
             const options = {
                 cacheBust: true,
@@ -333,7 +343,18 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
         if (!flyerRef.current) return;
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Ensure images are fully loaded
+            const images = flyerRef.current.querySelectorAll('img');
+            await Promise.all(Array.from(images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+            }));
+
             const dataUrl = await toPng(flyerRef.current, {
                 cacheBust: true,
                 pixelRatio: 2,
@@ -761,14 +782,16 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
 
                                             {/* Store Header */}
                                             {/* Store Header */}
-                                            <div className={`relative z-20 flex flex-col items-center ${flyerFormat === 'story' ? 'pt-6 pb-2' : 'pt-3 pb-1'}`}>
+                                            {/* Store Header */}
+                                            <div className={`relative z-20 flex flex-col items-center ${flyerFormat === 'story' ? 'pt-16 pb-2' : 'pt-3 pb-1'}`}>
                                                 {store?.logoUrl ? (
-                                                    <div className="bg-white p-1.5 rounded-xl shadow-lg max-w-[90px]">
+                                                    <div className="bg-white p-2 rounded-xl shadow-lg max-w-[90px] min-h-[40px] flex items-center justify-center">
                                                         <img
                                                             src={store.logoUrl.startsWith('http') ? store.logoUrl : `${API_URL}${store.logoUrl}`}
-                                                            className={`${flyerFormat === 'story' ? 'h-6' : 'h-4'} w-auto object-contain`}
+                                                            className={`${flyerFormat === 'story' ? 'h-8' : 'h-5'} w-auto object-contain max-w-full`}
                                                             crossOrigin="anonymous"
                                                             alt="Logo"
+                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                                         />
                                                     </div>
                                                 ) : (
@@ -838,16 +861,17 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                     </div>
 
                                                     {/* Footer Branding */}
-                                                    <div className={`${flyerFormat === 'story' ? 'p-2.5 pb-2.5' : 'p-1 pb-1'} bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-between`}>
+                                                    {/* Footer Branding */}
+                                                    <div className={`${flyerFormat === 'story' ? 'p-3 mb-10' : 'p-1 pb-1'} bg-white/10 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-between`}>
                                                         <div className="flex flex-col">
                                                             <p className="text-[5px] font-bold text-white/50 uppercase tracking-widest leading-none mb-0.5">Fale Conosco</p>
                                                             <p className={`${flyerFormat === 'story' ? 'text-[10px]' : 'text-[8px]'} font-black truncate max-w-[150px] leading-tight`}>{store?.storeName || 'Zapcar'}</p>
                                                         </div>
                                                         <div
-                                                            className={`${flyerFormat === 'story' ? 'w-7 h-7' : 'w-5 h-5'} rounded-full flex items-center justify-center shadow-lg border border-white/20`}
+                                                            className={`${flyerFormat === 'story' ? 'w-8 h-8' : 'w-5 h-5'} rounded-full flex items-center justify-center shadow-lg border border-white/20`}
                                                             style={{ backgroundColor: flyerColor }}
                                                         >
-                                                            <Instagram className={`${flyerFormat === 'story' ? 'w-3.5 h-3.5' : 'w-2.5 h-2.5'} text-white`} />
+                                                            <Instagram className={`${flyerFormat === 'story' ? 'w-4 h-4' : 'w-2.5 h-2.5'} text-white`} />
                                                         </div>
                                                     </div>
                                                 </div>

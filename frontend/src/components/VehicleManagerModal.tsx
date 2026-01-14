@@ -32,6 +32,11 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
         price: '', costPrice: '', category: 'Seminovo', km: 0, fuel: 'Flex',
         transmission: 'Automático', color: '', description: '', location: '',
         trava: false, alarme: false, som: false, teto: false, banco_couro: false,
+        ar_condicionado: '', bancos_premium: '', teto_solar: '', vidros_eletricos: false,
+        chave_presencial: false, retrovisores_eletricos: '', multimidia: '',
+        sensores_estacionamento: '', camera_re: '', som_premium: '', airbags_extra: false,
+        controle_tracao: false, assistente_rampa: false, farois: '', rodas_liga: false,
+        pintura: '', aerofolio: false, frisos_laterais: false,
     });
 
     // Marketing Data
@@ -64,6 +69,24 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
                 teto: initialData.teto || false,
                 banco_couro: initialData.banco_couro || false,
                 costPrice: initialData.costPrice ? initialData.costPrice.toString().replace('.', ',') : '',
+                ar_condicionado: initialData.ar_condicionado || '',
+                bancos_premium: initialData.bancos_premium || '',
+                teto_solar: initialData.teto_solar || '',
+                vidros_eletricos: initialData.vidros_eletricos || false,
+                chave_presencial: initialData.chave_presencial || false,
+                retrovisores_eletricos: initialData.retrovisores_eletricos || '',
+                multimidia: initialData.multimidia || '',
+                sensores_estacionamento: initialData.sensores_estacionamento || '',
+                camera_re: initialData.camera_re || '',
+                som_premium: initialData.som_premium || '',
+                airbags_extra: initialData.airbags_extra || false,
+                controle_tracao: initialData.controle_tracao || false,
+                assistente_rampa: initialData.assistente_rampa || false,
+                farois: initialData.farois || '',
+                rodas_liga: initialData.rodas_liga || false,
+                pintura: initialData.pintura || '',
+                aerofolio: initialData.aerofolio || false,
+                frisos_laterais: initialData.frisos_laterais || false,
             });
             setExistingImages(initialData.images || []);
             setDocFiles([]); // Reset pending docs
@@ -75,12 +98,18 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
                 price: '', costPrice: '', category: 'Seminovo', km: 0, fuel: 'Flex',
                 transmission: 'Automático', color: '', description: '', location: '',
                 trava: false, alarme: false, som: false, teto: false, banco_couro: false,
+                ar_condicionado: '', bancos_premium: '', teto_solar: '', vidros_eletricos: false,
+                chave_presencial: false, retrovisores_eletricos: '', multimidia: '',
+                sensores_estacionamento: '', camera_re: '', som_premium: '', airbags_extra: false,
+                controle_tracao: false, assistente_rampa: false, farois: '', rodas_liga: false,
+                pintura: '', aerofolio: false, frisos_laterais: false,
             });
-            setExistingImages([]);
-            setDocFiles([]);
-            setImageFiles([]);
         }
+        setExistingImages([]);
+        setDocFiles([]);
+        setImageFiles([]);
     }, [initialData, isOpen]);
+
 
     const fetchStore = async () => {
         const token = localStorage.getItem('token');
@@ -127,7 +156,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const currentCount = existingImages.length + imageFiles.length;
-            const remainingSlots = 5 - currentCount;
+            const remainingSlots = 10 - currentCount;
 
             if (remainingSlots <= 0) return;
 
@@ -279,7 +308,7 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
 🛣 KM: ${data.km}km
 
 ✅ Completo e Revisado!
-${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}${data.som ? '✅ Som Multimídia\n' : ''}${data.banco_couro ? '✅ Bancos de Couro\n' : ''}
+${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}${data.som ? '✅ Som Multimídia\n' : ''}${data.banco_couro || data.bancos_premium ? '✅ Bancos Premium\n' : ''}${data.teto || data.teto_solar ? '✅ Teto Solar\n' : ''}${data.ar_condicionado ? `✅ Ar-condicionado ${data.ar_condicionado}\n` : ''}${data.vidros_eletricos ? '✅ Vidros Elétricos\n' : ''}${data.chave_presencial ? '✅ Chave Presencial\n' : ''}${data.multimidia ? '✅ Multimídia\n' : ''}${data.camera_re ? '✅ Câmera de Ré\n' : ''}${data.sensores_estacionamento ? '✅ Sensores de Estacionamento\n' : ''}${data.rodas_liga ? '✅ Rodas de Liga Leve\n' : ''}
 💰 VALOR: R$ ${data.price}
 
 📍 Venha conferir pessoalmente! 
@@ -490,7 +519,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                         </div>
                                     ))}
 
-                                    {(existingImages.length + imageFiles.length) < 5 && (
+                                    {(existingImages.length + imageFiles.length) < 10 && (
                                         <label className="border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-center aspect-square hover:bg-gray-50 cursor-pointer transition-colors relative">
                                             <Upload className="w-6 h-6 text-gray-400 mb-2" />
                                             <span className="text-xs text-gray-500 font-medium">Adicionar Foto</span>
@@ -499,7 +528,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                     )}
                                 </div>
                                 <p className="text-xs text-gray-400 mt-2 text-right">
-                                    {existingImages.length + imageFiles.length} / 5 fotos
+                                    {existingImages.length + imageFiles.length} / 10 fotos
                                 </p>
                             </div>
 
@@ -545,23 +574,180 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                     )}
                                 </div>
 
-                                <div className="space-y-4">
-                                    <h4 className="font-bold text-gray-800 border-b pb-2">Especificações</h4>
+                                <div className="space-y-6">
+                                    <h4 className="font-bold text-gray-800 border-b pb-2 flex items-center gap-2">
+                                        <Car className="w-4 h-4" /> Especificações e Opcionais
+                                    </h4>
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div><label className="text-xs font-bold text-gray-500 uppercase">Câmbio</label><input name="transmission" value={formData.transmission} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
                                         <div><label className="text-xs font-bold text-gray-500 uppercase">Combustível</label><input name="fuel" value={formData.fuel} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg" /></div>
                                     </div>
-                                    <div><label className="text-xs font-bold text-gray-500 uppercase">Opcionais</label>
-                                        <div className="flex flex-wrap gap-3 mt-2">
-                                            {[
-                                                { k: 'trava', l: 'Trava' }, { k: 'alarme', l: 'Alarme' },
-                                                { k: 'som', l: 'Som' }, { k: 'teto', l: 'Teto Solar' }, { k: 'banco_couro', l: 'Couro' }
-                                            ].map(opt => (
-                                                <label key={opt.k} className="flex items-center gap-1.5 cursor-pointer bg-white border px-2 py-1 rounded-md hover:bg-gray-50"><input type="checkbox" name={opt.k} checked={(formData as any)[opt.k]} onChange={handleCheckboxChange} className="rounded text-green-600" /><span className="text-xs">{opt.l}</span></label>
-                                            ))}
+
+                                    <div className="space-y-6">
+                                        {/* 1. Conforto e Conveniência */}
+                                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                            <h5 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">1. Conforto e Conveniência</h5>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Ar-condicionado</label>
+                                                    <select name="ar_condicionado" value={formData.ar_condicionado} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="">Nenhum</option>
+                                                        <option value="Manual">Manual</option>
+                                                        <option value="Digital">Digital (automático)</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Bancos Premium</label>
+                                                    <select name="bancos_premium" value={formData.bancos_premium} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="">Nenhum</option>
+                                                        <option value="Couro">Couro</option>
+                                                        <option value="Outros">Outros materiais premium</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Teto Solar</label>
+                                                    <select name="teto_solar" value={formData.teto_solar} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="">Nenhum</option>
+                                                        <option value="Elétrico">Elétrico</option>
+                                                        <option value="Panorâmico">Panorâmico</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Retrovisores Elétricos</label>
+                                                    <select name="retrovisores_eletricos" value={formData.retrovisores_eletricos} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="">Não</option>
+                                                        <option value="Sim">Sim</option>
+                                                        <option value="Rebatimento">Com rebatimento elétrico</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-50">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" name="vidros_eletricos" checked={formData.vidros_eletricos} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                    <span className="text-sm text-gray-600">Vidros Elétricos</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" name="chave_presencial" checked={formData.chave_presencial} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                    <span className="text-sm text-gray-600">Chave Presencial</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" name="trava" checked={formData.trava} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                    <span className="text-sm text-gray-600">Trava Elétrica</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {/* 2. Tecnologia e Multimídia */}
+                                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                            <h5 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">2. Tecnologia e Multimídia</h5>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Central Multimídia</label>
+                                                    <select name="multimidia" value={formData.multimidia} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="">Nenhuma</option>
+                                                        <option value="GPS">GPS integrado</option>
+                                                        <option value="Espelhamento">CarPlay / Android Auto</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Sensores Estac.</label>
+                                                    <select name="sensores_estacionamento" value={formData.sensores_estacionamento} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="">Não</option>
+                                                        <option value="Traseiros">Apenas Traseiros</option>
+                                                        <option value="Dianteiros">Apenas Dianteiros</option>
+                                                        <option value="Ambos">Dianteiros e Traseiros</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Câmera</label>
+                                                    <select name="camera_re" value={formData.camera_re} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="">Não</option>
+                                                        <option value="Sim">Câmera de Ré</option>
+                                                        <option value="360">Câmera 360°</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Sistema de Som</label>
+                                                    <select name="som_premium" value={formData.som_premium} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="">Padrão</option>
+                                                        <option value="Premium">Mais alto-falantes</option>
+                                                        <option value="Subwoofer">Com Subwoofer</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-50">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="checkbox" name="som" checked={formData.som} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                    <span className="text-sm text-gray-600">Som Bluetooth/USB</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {/* 3. Segurança e Performance */}
+                                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                            <h5 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">3. Segurança e Performance</h5>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Faróis Avançados</label>
+                                                    <select name="farois" value={formData.farois} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="">Padrão</option>
+                                                        <option value="LED">LED</option>
+                                                        <option value="Xenônio">Xenônio</option>
+                                                    </select>
+                                                </div>
+                                                <div className="flex flex-col justify-end gap-3">
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input type="checkbox" name="airbags_extra" checked={formData.airbags_extra} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                        <span className="text-sm text-gray-600">Airbags Extra</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input type="checkbox" name="controle_tracao" checked={formData.controle_tracao} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                        <span className="text-sm text-gray-600">TCS / ESP</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input type="checkbox" name="assistente_rampa" checked={formData.assistente_rampa} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                        <span className="text-sm text-gray-600">Assist. Rampa (HSA)</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input type="checkbox" name="rodas_liga" checked={formData.rodas_liga} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                        <span className="text-sm text-gray-600">Rodas de Liga Leve</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input type="checkbox" name="alarme" checked={formData.alarme} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                        <span className="text-sm text-gray-600">Alarme</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 4. Estética e Personalização */}
+                                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                            <h5 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">4. Estética e Personalização</h5>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Pintura</label>
+                                                    <select name="pintura" value={formData.pintura} onChange={handleChange} className="w-full mt-1 p-2 border rounded-lg text-sm">
+                                                        <option value="Sólida">Sólida</option>
+                                                        <option value="Metálica">Metálica</option>
+                                                        <option value="Perolizada">Perolizada</option>
+                                                    </select>
+                                                </div>
+                                                <div className="flex flex-col justify-end gap-3">
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input type="checkbox" name="aerofolio" checked={formData.aerofolio} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                        <span className="text-sm text-gray-600">Aerofólio</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input type="checkbox" name="frisos_laterais" checked={formData.frisos_laterais} onChange={handleCheckboxChange} className="rounded text-green-600" />
+                                                        <span className="text-sm text-gray-600">Frisos Laterais</span>
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
 
                             <div className="flex justify-between items-center pt-6 border-t border-gray-200">

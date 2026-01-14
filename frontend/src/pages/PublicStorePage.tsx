@@ -29,6 +29,24 @@ interface Vehicle {
     som?: boolean;
     teto?: boolean;
     banco_couro?: boolean;
+    ar_condicionado?: string;
+    bancos_premium?: string;
+    teto_solar?: string;
+    vidros_eletricos?: boolean;
+    chave_presencial?: boolean;
+    retrovisores_eletricos?: string;
+    multimidia?: string;
+    sensores_estacionamento?: string;
+    camera_re?: string;
+    som_premium?: string;
+    airbags_extra?: boolean;
+    controle_tracao?: boolean;
+    assistente_rampa?: boolean;
+    farois?: string;
+    rodas_liga?: boolean;
+    pintura?: string;
+    aerofolio?: boolean;
+    frisos_laterais?: boolean;
     views?: number;
     interestCount?: number;
 }
@@ -94,9 +112,20 @@ const VehicleModal = ({ vehicle, store, onClose }: { vehicle: Vehicle, store: St
     const optionals = [
         { label: 'Trava Elétrica', value: vehicle.trava },
         { label: 'Alarme', value: vehicle.alarme },
-        { label: 'Som', value: vehicle.som },
-        { label: 'Teto Solar', value: vehicle.teto },
-        { label: 'Bancos de Couro', value: vehicle.banco_couro },
+        { label: 'Som Bluetooth/USB', value: vehicle.som },
+        { label: 'Teto Solar', value: vehicle.teto || vehicle.teto_solar },
+        { label: 'Bancos em Couro', value: vehicle.banco_couro || (vehicle.bancos_premium === 'Couro') },
+        { label: `Ar-condicionado ${vehicle.ar_condicionado}`, value: !!vehicle.ar_condicionado },
+        { label: 'Vidros Elétricos', value: vehicle.vidros_eletricos },
+        { label: 'Chave Presencial', value: vehicle.chave_presencial },
+        { label: `Multimídia ${vehicle.multimidia === 'GPS' ? '(GPS)' : ''}`, value: !!vehicle.multimidia },
+        { label: 'Câmera de Ré', value: !!vehicle.camera_re },
+        { label: 'Sensor de Estac.', value: !!vehicle.sensores_estacionamento },
+        { label: 'Airbags Extra', value: vehicle.airbags_extra },
+        { label: 'Controle de Tração', value: vehicle.controle_tracao },
+        { label: 'Assistente de Rampa', value: vehicle.assistente_rampa },
+        { label: 'Rodas de Liga Leve', value: vehicle.rodas_liga },
+        { label: `Faróis ${vehicle.farois}`, value: !!vehicle.farois },
     ].filter(opt => opt.value);
 
     return (

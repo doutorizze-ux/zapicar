@@ -104,10 +104,10 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
                 controle_tracao: false, assistente_rampa: false, farois: '', rodas_liga: false,
                 pintura: '', aerofolio: false, frisos_laterais: false,
             });
+            setExistingImages([]);
+            setDocFiles([]);
+            setImageFiles([]);
         }
-        setExistingImages([]);
-        setDocFiles([]);
-        setImageFiles([]);
     }, [initialData, isOpen]);
 
 
@@ -279,9 +279,18 @@ export function VehicleManagerModal({ isOpen, onClose, onSuccess, initialData }:
                 if (imageFiles.length > 0) {
                     const uploadData = new FormData();
                     imageFiles.forEach(file => uploadData.append('files', file));
-                    await fetch(`${API_URL}/vehicles/${vehicleId}/upload`, { method: 'POST', body: uploadData });
+                    const uploadRes = await fetch(`${API_URL}/vehicles/${vehicleId}/upload`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: uploadData
+                    });
+                    if (!uploadRes.ok) {
+                        alert('Veículo salvo, mas erro ao enviar imagens.');
+                    }
                 }
                 onSuccess();
+                setImageFiles([]); // Clear pending images after upload
+                setDocFiles([]); // Clear pending docs after upload
                 if (!initialData) onClose(); // Close on create, stay on edit
                 else alert('Veículo atualizado!');
             } else {

@@ -17,8 +17,9 @@ export class VehiclesController {
         return this.vehiclesService.create(createVehicleDto, req.user.userId);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post(':id/upload')
-    @UseInterceptors(FilesInterceptor('files', 4, {
+    @UseInterceptors(FilesInterceptor('files', 10, {
         storage: diskStorage({
             destination: './uploads',
             filename: (req, file, cb) => {
@@ -41,9 +42,11 @@ export class VehiclesController {
             vehicle.images.push(imageUrl);
         });
 
+        // Use direct repository save for better entity handling with simple-json
         return this.vehiclesService.update(id, { images: vehicle.images });
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post(':id/upload-doc')
     @UseInterceptors(FilesInterceptor('files', 10, {
         storage: diskStorage({

@@ -5,7 +5,7 @@ import {
     MessageCircle, Search, MapPin,
     Car, Calendar, Gauge, Fuel, Settings,
     CheckCircle2, X, ChevronLeft, ChevronRight, Share2, Menu,
-    Calculator, TrendingDown, Flame
+    TrendingDown, Flame
 } from 'lucide-react';
 import { API_URL } from '../config';
 
@@ -66,7 +66,7 @@ interface StoreData {
 
 const VehicleModal = ({ vehicle, store, onClose }: { vehicle: Vehicle, store: StoreData, onClose: () => void }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [simulation, setSimulation] = useState({ entry: 0, months: 48, rate: 1.89 });
+    const [simulation] = useState({ entry: 0, months: 48, rate: 1.89 });
 
     const calculateInstallment = () => {
         const principal = vehicle.price - simulation.entry;
@@ -286,53 +286,7 @@ const VehicleModal = ({ vehicle, store, onClose }: { vehicle: Vehicle, store: St
                         </div>
                     )}
 
-                    {/* Simulador de Financiamento Integrado */}
-                    <div className="mb-8 p-6 bg-gradient-to-br from-gray-50 to-white rounded-3xl border border-gray-100 shadow-inner">
-                        <div className="flex items-center gap-2 mb-4 text-gray-900">
-                            <Calculator className="w-5 h-5 text-green-600" />
-                            <h3 className="font-bold text-sm uppercase tracking-wide">Simulador de Financiamento</h3>
-                        </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Entrada (R$)</label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
-                                    <input
-                                        type="number"
-                                        placeholder="0,00"
-                                        className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/20 outline-none transition-all font-bold"
-                                        onChange={(e) => {
-                                            const entry = parseFloat(e.target.value) || 0;
-                                            setSimulation(prev => ({ ...prev, entry }));
-                                        }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Prazo</label>
-                                    <select
-                                        className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none font-bold"
-                                        value={simulation.months}
-                                        onChange={(e) => setSimulation(prev => ({ ...prev, months: Number(e.target.value) }))}
-                                    >
-                                        {[12, 24, 36, 48, 60].map(m => <option key={m} value={m}>{m}x</option>)}
-                                    </select>
-                                </div>
-                                <div className="flex flex-col justify-end">
-                                    <div className="p-2.5 bg-green-50 rounded-xl border border-green-100">
-                                        <p className="text-[10px] text-green-600 font-bold uppercase leading-none mb-1">Parcela Estimada</p>
-                                        <p className="text-lg font-black text-green-700 leading-none">
-                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateInstallment())}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            <p className="text-[9px] text-gray-400 text-center">* Sujeito à análise de crédito e taxas bancárias.</p>
-                        </div>
-                    </div>
 
                     <div className="mt-auto">
                         <button

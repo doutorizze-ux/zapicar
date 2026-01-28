@@ -3,6 +3,7 @@ import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, UseInter
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { VehiclesService } from '../vehicles/vehicles.service';
@@ -49,12 +50,21 @@ export class UsersController {
     @Post('logo')
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
-            destination: './uploads',
+            destination: (req, file, cb) => {
+                const uploadPath = './uploads';
+                if (!existsSync(uploadPath)) {
+                    mkdirSync(uploadPath, { recursive: true });
+                }
+                cb(null, uploadPath);
+            },
             filename: (req, file, cb) => {
                 const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
                 return cb(null, `logo-${randomName}${extname(file.originalname)}`);
             }
-        })
+        }),
+        limits: {
+            fileSize: 5 * 1024 * 1024, // 5MB for logo
+        }
     }))
     async uploadLogo(@Request() req, @UploadedFile() file: Express.Multer.File) {
         if (!file) throw new Error('File not found');
@@ -66,12 +76,21 @@ export class UsersController {
     @Post('cover')
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
-            destination: './uploads',
+            destination: (req, file, cb) => {
+                const uploadPath = './uploads';
+                if (!existsSync(uploadPath)) {
+                    mkdirSync(uploadPath, { recursive: true });
+                }
+                cb(null, uploadPath);
+            },
             filename: (req, file, cb) => {
                 const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
                 return cb(null, `cover-${randomName}${extname(file.originalname)}`);
             }
-        })
+        }),
+        limits: {
+            fileSize: 10 * 1024 * 1024, // 10MB for cover
+        }
     }))
     async uploadCover(@Request() req, @UploadedFile() file: Express.Multer.File) {
         if (!file) throw new Error('File not found');

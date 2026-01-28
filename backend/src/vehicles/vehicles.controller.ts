@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, Query, UseGuards, Request } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
@@ -21,12 +22,21 @@ export class VehiclesController {
     @Post(':id/upload')
     @UseInterceptors(FilesInterceptor('files', 10, {
         storage: diskStorage({
-            destination: './uploads',
+            destination: (req, file, cb) => {
+                const uploadPath = './uploads';
+                if (!existsSync(uploadPath)) {
+                    mkdirSync(uploadPath, { recursive: true });
+                }
+                cb(null, uploadPath);
+            },
             filename: (req, file, cb) => {
                 const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
                 return cb(null, `${randomName}${extname(file.originalname)}`);
             }
-        })
+        }),
+        limits: {
+            fileSize: 10 * 1024 * 1024, // 10MB per file
+        }
     }))
     async uploadImages(@Param('id') id: string, @UploadedFiles() files: Array<Express.Multer.File>) {
         if (!files || files.length === 0) throw new Error('No files found');
@@ -50,12 +60,21 @@ export class VehiclesController {
     @Post(':id/upload-doc')
     @UseInterceptors(FilesInterceptor('files', 10, {
         storage: diskStorage({
-            destination: './uploads/docs',
+            destination: (req, file, cb) => {
+                const uploadPath = './uploads/docs';
+                if (!existsSync(uploadPath)) {
+                    mkdirSync(uploadPath, { recursive: true });
+                }
+                cb(null, uploadPath);
+            },
             filename: (req, file, cb) => {
                 const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
                 return cb(null, `${randomName}${extname(file.originalname)}`);
             }
-        })
+        }),
+        limits: {
+            fileSize: 10 * 1024 * 1024, // 10MB per file
+        }
     }))
     async uploadDocuments(@Param('id') id: string, @UploadedFiles() files: Array<Express.Multer.File>) {
         // Ensure uploads/docs exists (In production code we'd check/create folder, but assuming it works or standard multer pattern)

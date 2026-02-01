@@ -3,8 +3,11 @@ import { MessageCircle, CheckCircle, TrendingUp, Smartphone, Shield, ArrowRight,
 import { motion } from 'framer-motion';
 import { SupportChatWidget } from '../components/SupportChatWidget';
 
+import { useAuth } from '../contexts/AuthContext';
+
 export function LandingPage() {
     const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
 
     return (
         <div className="min-h-screen bg-[#0B2B26] font-sans text-white overflow-x-hidden selection:bg-green-500 selection:text-white">
@@ -17,8 +20,11 @@ export function LandingPage() {
                     <img src="/logo-z-green.png" alt="Zapicar" className="h-12 w-auto object-contain" />
 
                     <div className="flex items-center gap-6">
-                        <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-300 hover:text-white transition-colors border border-transparent hover:border-white/10 px-4 py-2 rounded-full">
-                            Entrar
+                        <button
+                            onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
+                            className="text-sm font-medium text-gray-300 hover:text-white transition-colors border border-transparent hover:border-white/10 px-4 py-2 rounded-full"
+                        >
+                            {isAuthenticated ? 'Acessar Painel' : 'Entrar'}
                         </button>
                         <button
                             onClick={() => navigate('/register')}

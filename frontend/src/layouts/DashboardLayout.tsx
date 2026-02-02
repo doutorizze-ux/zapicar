@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { SupportChatWidget } from '../components/SupportChatWidget';
 import { useSystem } from '../contexts/SystemContext';
 import { API_URL } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 const sidebarItems = [
     { icon: LayoutDashboard, label: 'Visão Geral', path: '/dashboard' },
@@ -23,6 +24,7 @@ const sidebarItems = [
 
 export function DashboardLayout() {
     const { settings } = useSystem();
+    const { logout, isAuthenticated } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const [storeInfo, setStoreInfo] = useState<{ name: string; logoUrl: string; subscriptionId?: string; subscriptionStatus?: string; planName?: string; nextDueDate?: string } | null>(null);
@@ -37,25 +39,45 @@ export function DashboardLayout() {
                     const response = await fetch(`${import.meta.env.VITE_API_URL}/users/profile`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
+
+                    if (response.status === 401) {
+                        console.warn('Session expired (401), logging out.');
+                        logout();
+                        navigate('/login');
+                        return;
+                    }
+
                     if (response.ok) {
                         const data = await response.json();
-                        let status = null;
 
+                        // If user is admin, skip subscription checks
+                        if (data.role === 'admin') {
+                            setStoreInfo({
+                                name: data.storeName || settings.siteName,
+                                logoUrl: data.logoUrl || '',
+                                subscriptionStatus: 'ACTIVE' // Admin is always active
+                            });
+                            setLoading(false);
+                            return;
+                        }
+
+                        let status = null;
                         let subData = null;
                         if (data.subscriptionId) {
                             try {
                                 const subRes = await fetch(`${import.meta.env.VITE_API_URL}/subscriptions/my-subscription`, {
                                     headers: { 'Authorization': `Bearer ${token}` }
                                 });
-                                subData = await subRes.json();
-                                status = subData.status;
+                                if (subRes.ok) {
+                                    subData = await subRes.json();
+                                    status = subData.status;
 
-                                // Stricter check: If payment is not confirmed, treat as PENDING even if subscription is ACTIVE
-                                const isPaid = subData.latestPaymentStatus === 'RECEIVED' || subData.latestPaymentStatus === 'CONFIRMED' || subData.latestPaymentStatus === 'COMPLETED';
-                                if (!isPaid) {
-                                    status = 'PENDING';
-                                } else {
-                                    status = 'ACTIVE';
+                                    const isPaid = subData.latestPaymentStatus === 'RECEIVED' || subData.latestPaymentStatus === 'CONFIRMED' || subData.latestPaymentStatus === 'COMPLETED';
+                                    if (!isPaid) {
+                                        status = 'PENDING';
+                                    } else {
+                                        status = 'ACTIVE';
+                                    }
                                 }
                             } catch (e) {
                                 console.error('Failed to fetch subscription status');
@@ -78,20 +100,30 @@ export function DashboardLayout() {
                 }
             } else {
                 setLoading(false);
-                navigate('/login');
+                if (location.pathname.startsWith('/dashboard')) {
+                    navigate('/login');
+                }
             }
         };
         fetchProfile();
-    }, [navigate]);
+    }, [navigate, logout, settings.siteName]);
 
     useEffect(() => {
-        if (!loading && storeInfo) {
+        if (!loading && storeInfo && isAuthenticated) {
+            // ONLY redirect if we are actually within a dashboard page
+            if (!location.pathname.startsWith('/dashboard')) return;
+
             const isPlansPage = location.pathname === '/dashboard/plans';
-            if ((!storeInfo.subscriptionId || (storeInfo.subscriptionStatus !== 'ACTIVE' && storeInfo.subscriptionStatus !== 'RECEIVED' && storeInfo.subscriptionStatus !== 'CONFIRMED' && storeInfo.subscriptionStatus !== 'COMPLETED')) && !isPlansPage) {
+            const hasValidSub = storeInfo.subscriptionStatus === 'ACTIVE' ||
+                storeInfo.subscriptionStatus === 'RECEIVED' ||
+                storeInfo.subscriptionStatus === 'CONFIRMED' ||
+                storeInfo.subscriptionStatus === 'COMPLETED';
+
+            if (!hasValidSub && !isPlansPage) {
                 navigate('/dashboard/plans');
             }
         }
-    }, [loading, storeInfo, location.pathname, navigate]);
+    }, [loading, storeInfo, location.pathname, navigate, isAuthenticated]);
 
     // Close mobile menu on route change
     useEffect(() => {
@@ -99,7 +131,7 @@ export function DashboardLayout() {
     }, [location.pathname]);
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
+        logout();
         navigate('/login');
     };
 

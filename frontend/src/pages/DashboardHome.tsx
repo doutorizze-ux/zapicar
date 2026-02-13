@@ -143,11 +143,11 @@ export function DashboardHome() {
 
                         <div>
                             <div className="flex justify-between text-sm mb-2">
-                                <span className="text-gray-500">Limite de Veículos</span>
-                                <span className="text-gray-900 font-medium">{statsData.activeVehicles} / 50</span>
+                                <span className="text-gray-500">Veículos em Estoque</span>
+                                <span className="text-gray-900 font-medium">{statsData.activeVehicles} / Ilimitado</span>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-2">
-                                <div className="bg-green-500 h-2 rounded-full" style={{ width: `${Math.min((statsData.activeVehicles / 50) * 100, 100)}%` }}></div>
+                                <div className="bg-green-500 h-2 rounded-full" style={{ width: `100%` }}></div>
                             </div>
                         </div>
 

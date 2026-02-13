@@ -119,8 +119,8 @@ export function AdminPlansPage() {
                             R$ {plan.price} <span className="text-sm text-gray-500 font-normal">/{plan.interval}</span>
                         </div>
 
-                        <div className="mt-2 text-sm text-gray-500 bg-gray-50 p-2 rounded">
-                            Limite: <strong>{plan.vehicleLimit || '∞'}</strong> carros
+                        <div className="mt-2 text-sm text-green-600 bg-green-50 p-2 rounded font-medium">
+                            Cadastro de Veículos: <strong>Ilimitado</strong>
                         </div>
 
                         <div className="mt-6 space-y-3">
@@ -161,16 +161,7 @@ export function AdminPlansPage() {
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Qtd. Veículos</label>
-                                    <input
-                                        type="number"
-                                        value={editingPlan.vehicleLimit || ''}
-                                        onChange={e => setEditingPlan({ ...editingPlan, vehicleLimit: Number(e.target.value) })}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                                        placeholder="50"
-                                    />
-                                </div>
+                                {/* Campo de limite removido pois o sistema agora é ilimitado */}
                             </div>
 
                             <div>

@@ -518,8 +518,17 @@ _Digite o número ou a opção desejada_`;
             this.userStates.set(stateKey, { mode: 'SEARCH_FINISHED' });
             await this.sendSearchOptions(userId, jid);
         } else {
-            await this.sendMessage(userId, jid, "😕 Não encontrei nenhum carro com essas características. Tente buscar apenas pelo *modelo* ou *marca*.");
-            await this.sendMainMenu(userId, jid, storeName);
+            const isQuestion = query.includes('?') || ['como', 'onde', 'qual', 'quanto', 'quem', 'porque', 'que'].some(w => query.toLowerCase().startsWith(w));
+
+            if (isQuestion) {
+                await this.sendMessage(userId, jid, "🤔 Ainda não entendi essa pergunta, mas um consultor humano poderá te ajudar melhor.");
+                // Suggest consultant option
+                const msgHelp = `Digite *2* para falar com um atendente ou tente buscar por outro carro (ex: Civic, Corolla).`;
+                await this.sendMessage(userId, jid, msgHelp);
+            } else {
+                await this.sendMessage(userId, jid, "😕 Não encontrei nenhum carro com essas características. \n\n*Dica:* Tente buscar apenas pelo *modelo* ou *marca* (ex: Gol, Honda, Onix).");
+                await this.sendMainMenu(userId, jid, storeName);
+            }
         }
     }
 

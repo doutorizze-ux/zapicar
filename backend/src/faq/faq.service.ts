@@ -32,38 +32,53 @@ export class FaqService {
     async findMatch(userId: string, message: string): Promise<string | null> {
         const faqs = await this.findAll(userId);
 
-        // Normalize function: remove accents and lowercase
+        // Normalize function: remove accents, lowercase, and basic punctuation
         const normalize = (str: string) =>
-            str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+            str.normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/[?!!.,]/g, " ")
+                .trim();
 
         const normalizedMsg = normalize(message);
-        const msgTokens = normalizedMsg.split(/\s+/).filter(t => t.length > 2);
+        const msgWords = normalizedMsg.split(/\s+/).filter(w => w.length >= 3);
+
+        // Helper for roots (first 4 chars for words > 4 chars)
+        const getRoot = (word: string) => word.length > 4 ? word.substring(0, 4) : word;
+        const msgRoots = msgWords.map(getRoot);
 
         let bestMatch: { answer: string, score: number } | null = null;
 
         for (const faq of faqs) {
             if (!faq.active) continue;
 
-            const normalizedQuestion = normalize(faq.question);
+            // Support multiple questions separated by symbols
+            const triggers = faq.question.split(/[,;|]/).map(t => normalize(t));
 
-            // 1. Exact contain match (after normalization)
-            if (normalizedMsg.includes(normalizedQuestion) || normalizedQuestion.includes(normalizedMsg)) {
-                return faq.answer;
-            }
+            for (const trigger of triggers) {
+                // 1. Sentence contain match
+                if (normalizedMsg.includes(trigger) || trigger.includes(normalizedMsg)) {
+                    return faq.answer;
+                }
 
-            // 2. Keyword density match
-            const questionTokens = normalizedQuestion.split(/\s+/).filter(t => t.length > 2);
-            let matches = 0;
+                // 2. Fuzzy Keyword match
+                const triggerWords = trigger.split(/\s+/).filter(w => w.length >= 3);
+                if (triggerWords.length === 0) continue;
 
-            for (const qToken of questionTokens) {
-                if (normalizedMsg.includes(qToken)) matches++;
-            }
+                let matchCount = 0;
+                for (const tWord of triggerWords) {
+                    const tRoot = getRoot(tWord);
+                    if (msgWords.includes(tWord) || msgRoots.includes(tRoot) || normalizedMsg.includes(tRoot)) {
+                        matchCount++;
+                    }
+                }
 
-            const score = matches / (questionTokens.length || 1);
-
-            // If at least 60% of keywords match
-            if (score >= 0.6 && (!bestMatch || score > bestMatch.score)) {
-                bestMatch = { answer: faq.answer, score };
+                const score = matchCount / triggerWords.length;
+                if (score >= 0.5) {
+                    if (!bestMatch || score > bestMatch.score) {
+                        bestMatch = { answer: faq.answer, score };
+                    }
+                }
             }
         }
 

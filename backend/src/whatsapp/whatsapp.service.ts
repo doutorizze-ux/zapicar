@@ -29,7 +29,7 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
     private connectionStatuses: Map<string, 'CONNECTED' | 'DISCONNECTED' | 'QR_READY' | 'CONNECTING'> = new Map();
 
     // State Machine for Chat
-    private userStates: Map<string, { mode: 'MENU' | 'WAITING_CAR_NAME' | 'WAITING_FAQ' | 'HANDOVER' }> = new Map();
+    private userStates: Map<string, { mode: 'MENU' | 'WAITING_CAR_NAME' | 'WAITING_FAQ' | 'HANDOVER' | 'SEARCH_FINISHED' }> = new Map();
     // Pause List
     private pausedUsers: Set<string> = new Set();
 
@@ -363,6 +363,17 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             } else {
                 await this.sendMessage(userId, jid, "Ainda não tenho uma resposta para isso 😅. Digite *menu* para voltar ou pergunte outra coisa.");
             }
+        } else if (currentState === 'SEARCH_FINISHED') {
+            if (msg === '1' || lowerMsg.includes('procurar') || lowerMsg.includes('outro')) {
+                await this.sendMessage(userId, jid, "Certo! Digite o nome do carro que você procura:");
+                this.userStates.set(stateKey, { mode: 'MENU' });
+            } else if (msg === '2' || lowerMsg.includes('voltar') || lowerMsg.includes('menu')) {
+                this.userStates.set(stateKey, { mode: 'MENU' });
+                await this.sendMainMenu(userId, jid, storeName);
+            } else {
+                // If it's not 1 or 2, they might be typing another car name directly
+                await this.handleCarSearch(userId, jid, msg, user);
+            }
         }
     }
 
@@ -398,6 +409,16 @@ Sou seu assistente virtual. Para começar, você pode:
         } catch (e) {
             this.logger.error('Failed to send menu', e);
         }
+    }
+
+    private async sendSearchOptions(userId: string, jid: string) {
+        const text = `🏁 *O que deseja fazer agora?*
+
+1️⃣  *Procurar outro veículo*
+2️⃣  *Voltar ao menu principal*
+
+_Digite o número ou a opção desejada_`;
+        await this.sendMessage(userId, jid, text);
     }
 
     private async handleCarSearch(userId: string, jid: string, query: string, user: any) {
@@ -468,8 +489,11 @@ Sou seu assistente virtual. Para começar, você pode:
                 await this.sendMessage(userId, jid, specs);
                 await new Promise(r => setTimeout(r, 1000));
             }
-            // Send Menu
-            await this.sendMainMenu(userId, jid, storeName);
+
+            // Set state and send options instead of direct menu
+            const stateKey = `${userId}:${jid}`;
+            this.userStates.set(stateKey, { mode: 'SEARCH_FINISHED' });
+            await this.sendSearchOptions(userId, jid);
         } else {
             await this.sendMessage(userId, jid, "😕 Não encontrei nenhum carro com essas características. Tente buscar apenas pelo *modelo* ou *marca*.");
             await this.sendMainMenu(userId, jid, storeName);

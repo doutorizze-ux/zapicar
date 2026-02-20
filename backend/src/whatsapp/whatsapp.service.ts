@@ -333,7 +333,8 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         }
 
         // State Machine
-        if (currentState === 'MENU') {
+        if (currentState === 'MENU' || currentState === 'SEARCH_FINISHED') {
+            // Priority 1: Navigation Commands
             if (msg === '2' || msg === 'btn_consultor') {
                 // Ensure Brazil Timezone
                 const brazilTime = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
@@ -348,12 +349,45 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 }
 
                 this.userStates.set(stateKey, { mode: 'HANDOVER' });
-            } else if (msg === '3' || msg === 'btn_faq') {
+                return;
+            }
+
+            if (msg === '3' || msg === 'btn_faq') {
                 this.userStates.set(stateKey, { mode: 'WAITING_FAQ' });
                 await this.sendMessage(userId, jid, "Envie sua dúvida e eu responderei com base nas informações da loja 😉");
-            } else {
-                await this.handleCarSearch(userId, jid, msg, user);
+                return;
             }
+
+            if (currentState === 'SEARCH_FINISHED') {
+                if (msg === '1' || lowerMsg.includes('procurar') || lowerMsg.includes('outro')) {
+                    await this.sendMessage(userId, jid, "Certo! Digite o nome do carro que você procura:");
+                    this.userStates.set(stateKey, { mode: 'MENU' });
+                    return;
+                } else if (msg === '2' || lowerMsg.includes('voltar') || lowerMsg.includes('menu')) {
+                    this.userStates.set(stateKey, { mode: 'MENU' });
+                    await this.sendMainMenu(userId, jid, storeName);
+                    return;
+                }
+            }
+
+            // Priority 2: FAQ Match (General questions like "financia?")
+            const answer = await this.faqService.findMatch(userId, msg);
+            if (answer) {
+                await this.sendMessage(userId, jid, answer);
+
+                // After answering, send options if they were in a search flow, or menu if not
+                if (currentState === 'SEARCH_FINISHED') {
+                    await this.sendSearchOptions(userId, jid);
+                } else {
+                    await this.sendMainMenu(userId, jid, storeName);
+                    this.userStates.set(stateKey, { mode: 'MENU' });
+                }
+                return;
+            }
+
+            // Priority 3: Car Search
+            await this.handleCarSearch(userId, jid, msg, user);
+
         } else if (currentState === 'WAITING_FAQ') {
             const answer = await this.faqService.findMatch(userId, msg);
             if (answer) {
@@ -362,17 +396,6 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 this.userStates.set(stateKey, { mode: 'MENU' });
             } else {
                 await this.sendMessage(userId, jid, "Ainda não tenho uma resposta para isso 😅. Digite *menu* para voltar ou pergunte outra coisa.");
-            }
-        } else if (currentState === 'SEARCH_FINISHED') {
-            if (msg === '1' || lowerMsg.includes('procurar') || lowerMsg.includes('outro')) {
-                await this.sendMessage(userId, jid, "Certo! Digite o nome do carro que você procura:");
-                this.userStates.set(stateKey, { mode: 'MENU' });
-            } else if (msg === '2' || lowerMsg.includes('voltar') || lowerMsg.includes('menu')) {
-                this.userStates.set(stateKey, { mode: 'MENU' });
-                await this.sendMainMenu(userId, jid, storeName);
-            } else {
-                // If it's not 1 or 2, they might be typing another car name directly
-                await this.handleCarSearch(userId, jid, msg, user);
             }
         }
     }

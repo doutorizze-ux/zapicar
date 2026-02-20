@@ -334,8 +334,11 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
         // State Machine
         if (currentState === 'MENU' || currentState === 'SEARCH_FINISHED') {
-            // Priority 1: Navigation Commands
-            if (msg === '2' || msg === 'btn_consultor') {
+            // Priority 1: Navigation & Intent Commands (Direct Handover)
+            const handoverKeywords = ['atendente', 'consultor', 'vendedor', 'humano', 'falar com', 'pessoa'];
+            const wantsHandover = handoverKeywords.some(k => lowerMsg.includes(k));
+
+            if (msg === '2' || msg === 'btn_consultor' || wantsHandover) {
                 // Ensure Brazil Timezone
                 const brazilTime = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
                 const hour = new Date(brazilTime).getHours();

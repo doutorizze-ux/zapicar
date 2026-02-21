@@ -1,18 +1,51 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, CheckCircle, TrendingUp, Smartphone, Shield, ArrowRight, Play, XCircle } from 'lucide-react';
+import { MessageCircle, CheckCircle, TrendingUp, Smartphone, Shield, ArrowRight, Play, XCircle, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SupportChatWidget } from '../components/SupportChatWidget';
 
 import { useAuth } from '../contexts/AuthContext';
 
+interface Plan {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    interval: string;
+    features: string[];
+}
+
 export function LandingPage() {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
+    const [plans, setPlans] = useState<Plan[]>([]);
+
+    useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                const response = await fetch(`${import.meta.env.VITE_API_URL}/plans`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setPlans(Array.isArray(data) ? data : []);
+                }
+            } catch (error) {
+                console.error('Error fetching plans:', error);
+            }
+        };
+        fetchPlans();
+    }, []);
+
+    // Group plans by name to show variants
+    const groupedPlans = plans.reduce((acc, plan) => {
+        const key = plan.name.trim();
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(plan);
+        return acc;
+    }, {} as Record<string, Plan[]>);
 
     return (
         <div className="min-h-screen bg-[#0B2B26] font-sans text-white overflow-x-hidden selection:bg-green-500 selection:text-white">
 
-            {/* Navbar */}
             {/* Navbar */}
             <nav className="fixed w-full bg-gradient-to-r from-[#051815] to-[#0B2B26] z-50 border-b border-white/5 h-20 flex items-center shadow-lg backdrop-blur-md bg-opacity-90">
                 <div className="max-w-7xl mx-auto w-full px-6 flex justify-between items-center">
@@ -20,6 +53,7 @@ export function LandingPage() {
                     <img src="/logo-z-green.png" alt="Zapicar" className="h-12 w-auto object-contain" />
 
                     <div className="flex items-center gap-6">
+                        <a href="#pricing" className="hidden md:block text-sm font-medium text-gray-300 hover:text-white transition-colors">Planos</a>
                         <button
                             onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
                             className="text-sm font-medium text-gray-300 hover:text-white transition-colors border border-transparent hover:border-white/10 px-4 py-2 rounded-full"
@@ -440,6 +474,28 @@ export function LandingPage() {
                 </div>
             </section>
 
+            {/* Pricing Section */}
+            <section id="pricing" className="py-24 bg-[#051815] border-y border-white/5">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Planos que cabem no seu bolso</h2>
+                        <p className="text-xl text-gray-400 max-w-2xl mx-auto font-light">
+                            Escolha o plano ideal para o tamanho da sua loja e comece a vender mais agora.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-8">
+                        {Object.keys(groupedPlans).map(planName => (
+                            <PricingCard
+                                key={planName}
+                                variants={groupedPlans[planName]}
+                                onSelect={() => navigate(isAuthenticated ? '/dashboard/plans' : '/register')}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* Target Audience */}
             <section className="py-24 bg-[#092520] border-t border-white/5">
                 <div className="max-w-7xl mx-auto px-6">
@@ -572,5 +628,71 @@ export function LandingPage() {
 
             <SupportChatWidget />
         </div>
+    );
+}
+
+function PricingCard({ variants, onSelect }: { variants: Plan[], onSelect: () => void }) {
+    const defaultVariant = variants.find(v => v.interval === 'MONTHLY') || variants[0];
+    const [selectedInterval, setSelectedInterval] = useState(defaultVariant.interval);
+
+    const activePlan = variants.find(v => v.interval === selectedInterval) || variants[0];
+
+    const intervalLabels: Record<string, string> = {
+        'MONTHLY': 'Mensal',
+        'QUARTERLY': 'Trimestral',
+        'SEMIANNUALLY': 'Semestral',
+        'YEARLY': 'Anual'
+    };
+
+    return (
+        <motion.div
+            whileHover={{ y: -10 }}
+            className={`w-full max-w-sm bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/10 hover:border-[#25D366]/50 transition-all shadow-2xl flex flex-col relative overflow-hidden group`}
+        >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#25D366]/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-[#25D366]/10 transition-colors"></div>
+
+            <div className="mb-6">
+                <h3 className="text-2xl font-bold text-white mb-2">{activePlan.name}</h3>
+                <p className="text-gray-400 text-sm font-light leading-relaxed">{activePlan.description || 'Impulsione suas vendas com inteligência.'}</p>
+            </div>
+
+            {/* Interval Selector */}
+            {variants.length > 1 && (
+                <div className="flex p-1 bg-white/5 rounded-full mb-8 self-start border border-white/5">
+                    {variants.sort((a, b) => (a.price - b.price)).map(variant => (
+                        <button
+                            key={variant.id}
+                            onClick={() => setSelectedInterval(variant.interval)}
+                            className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all ${selectedInterval === variant.interval ? 'bg-[#25D366] text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            {intervalLabels[variant.interval] || variant.interval}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            <div className="mb-8 items-baseline gap-1 flex">
+                <span className="text-4xl font-extrabold text-[#25D366]">R$ {activePlan.price.toFixed(2).replace('.', ',')}</span>
+                <span className="text-gray-500 font-medium">/{intervalLabels[activePlan.interval]?.toLowerCase() || activePlan.interval}</span>
+            </div>
+
+            <div className="space-y-4 flex-1 mb-8">
+                {(Array.isArray(activePlan.features) ? activePlan.features : []).map((feature, i) => (
+                    <div key={i} className="flex items-start gap-3 text-sm text-gray-300 font-light">
+                        <div className="mt-0.5 w-5 h-5 rounded-full bg-[#25D366]/10 flex items-center justify-center flex-shrink-0">
+                            <Check className="w-3 h-3 text-[#25D366]" />
+                        </div>
+                        {feature}
+                    </div>
+                ))}
+            </div>
+
+            <button
+                onClick={onSelect}
+                className="w-full py-4 px-6 bg-white text-[#0B2B26] rounded-2xl font-bold hover:bg-[#25D366] hover:text-white transition-all transform group-hover:scale-[1.02] shadow-xl"
+            >
+                Escolher Plano
+            </button>
+        </motion.div>
     );
 }

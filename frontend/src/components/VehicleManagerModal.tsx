@@ -1064,7 +1064,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                     <div className={flyerFormat === 'story' ? 'mb-3' : 'mb-1'}>
                                                         <div className="flex items-center gap-1.5 mb-0.5">
                                                             <div className="h-[2px] w-3 rounded-full" style={{ backgroundColor: flyerColor }} />
-                                                            <p className="text-[7px] font-black uppercase tracking-widest text-white/40">Oferta Exclusiva</p>
+                                                            <p className="text-[7px] font-black uppercase tracking-widest" style={{ color: flyerColor }}>OPORTUNIDADE</p>
                                                         </div>
                                                         <h4 className={`text-white uppercase leading-tight font-black tracking-tighter ${flyerFormat === 'story' ? 'text-[22px]' : 'text-[16px]'}`}>
                                                             {formData.brand} <span className="block italic" style={{ color: flyerColor }}>{formData.name}</span>
@@ -1072,7 +1072,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                     </div>
 
                                                     {/* Specs Grid */}
-                                                    <div className={`grid grid-cols-2 gap-1.5 ${flyerFormat === 'story' ? 'mb-3' : 'hidden'}`}>
+                                                    <div className={`grid grid-cols-2 gap-1.5 ${flyerFormat === 'story' ? 'mb-3' : 'mb-2'}`}>
                                                         {[
                                                             { label: 'ANO', val: formData.year },
                                                             { label: 'KM', val: `${formData.km}` },
@@ -1088,26 +1088,14 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
 
                                                     {/* Price & Call to Action */}
                                                     <div className={flyerFormat === 'story' ? 'mb-3' : 'mb-1'}>
-                                                        <p className="text-[7px] font-black uppercase tracking-widest text-white/40 mb-0.5">Valor de Venda</p>
+                                                        <p className="text-[7px] font-black uppercase tracking-widest text-white/40 mb-0.5">VALOR ESPECIAL</p>
                                                         <p className={`font-black tracking-tighter text-white drop-shadow-2xl leading-none ${flyerFormat === 'story' ? 'text-[32px]' : 'text-[24px]'}`}>
                                                             <span className="text-[12px] mr-1 opacity-60">R$</span>{formData.price.includes(',') ? formData.price : new Intl.NumberFormat('pt-BR').format(Number(formData.price))}
                                                         </p>
                                                     </div>
 
-                                                    {/* Footer Glass Bar */}
-                                                    <div className={`flex items-center justify-between bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl w-full shadow-2xl relative overflow-hidden ${flyerFormat === 'story' ? 'p-3' : 'p-2'}`}>
-                                                        <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent pointer-events-none" />
-                                                        <div className="flex flex-col relative z-10">
-                                                            <p className="text-[6px] font-black text-white/30 uppercase tracking-widest mb-0.5">NOSSO WHATSAPP</p>
-                                                            <p className={`text-white font-black truncate leading-tight ${flyerFormat === 'story' ? 'text-[12px] max-w-[160px]' : 'text-[10px] max-w-[140px]'}`}>{store?.storeName || 'Zapcar'}</p>
-                                                        </div>
-                                                        <div
-                                                            className={`rounded-lg flex items-center justify-center shadow-2xl rotate-3 ${flyerFormat === 'story' ? 'w-8 h-8' : 'w-7 h-7'}`}
-                                                            style={{ backgroundColor: flyerColor }}
-                                                        >
-                                                            <Instagram className={flyerFormat === 'story' ? 'w-4 h-4 text-white' : 'w-3.5 h-3.5 text-white'} />
-                                                        </div>
-                                                    </div>
+                                                    {/* Footer Glass Bar Removido a pedido do usuário */}
+
                                                 </div>
                                             </div>
                                         </div>

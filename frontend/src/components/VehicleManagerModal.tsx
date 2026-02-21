@@ -1009,22 +1009,21 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                             )}
 
                                             {/* Content Overlay */}
-                                            {/* 2. LAYER: Global Content Wrapper (Prevents clipping) */}
-                                            <div className="relative z-10 flex flex-col h-full w-full p-4 justify-between">
+                                            <div className={`relative z-10 flex flex-col h-full w-full ${flyerFormat === 'story' ? 'p-5' : 'p-3'} justify-between`}>
 
                                                 {/* TOP SECTION: Logo + Category */}
                                                 <div className="flex flex-col items-center">
-                                                    <div className="w-full flex justify-between items-start mb-4">
-                                                        <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-3 py-1 rounded-full shadow-lg">
-                                                            <span className="text-white text-[9px] font-black uppercase tracking-[0.2em]">{formData.category || 'Seminovo'}</span>
+                                                    <div className={`w-full flex justify-between items-start ${flyerFormat === 'story' ? 'mb-4' : 'mb-2'}`}>
+                                                        <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-2 py-0.5 rounded-full">
+                                                            <span className="text-white text-[8px] font-black uppercase tracking-wider">{formData.category || 'Seminovo'}</span>
                                                         </div>
-                                                        <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-2 py-1 rounded-full">
-                                                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                                                        <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-1.5 py-0.5 rounded-full">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                                                         </div>
                                                     </div>
 
                                                     {store?.logoUrl ? (
-                                                        <div className="bg-white px-5 py-2.5 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-center max-w-[140px] h-[45px]">
+                                                        <div className={`bg-white px-4 py-1.5 rounded-xl shadow-2xl border border-white/10 flex items-center justify-center ${flyerFormat === 'story' ? 'max-w-[120px] h-[35px]' : 'max-w-[90px] h-[25px]'}`}>
                                                             <img
                                                                 src={store.logoUrl.startsWith('http') ? store.logoUrl : `${API_URL}${store.logoUrl}`}
                                                                 className="h-full w-auto object-contain"
@@ -1033,27 +1032,27 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                             />
                                                         </div>
                                                     ) : (
-                                                        <div className="bg-white/95 backdrop-blur-md px-6 py-2 rounded-2xl shadow-2xl">
-                                                            <p className="text-[#020617] text-[12px] font-black uppercase tracking-[0.2em]">{store?.storeName || 'Zapcar'}</p>
+                                                        <div className="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-xl shadow-2xl">
+                                                            <p className="text-[#020617] text-[10px] font-black uppercase tracking-wider">{store?.storeName || 'Zapcar'}</p>
                                                         </div>
                                                     )}
                                                 </div>
 
                                                 {/* MIDDLE SECTION: Car Display */}
-                                                <div className={`relative flex items-center justify-center ${flyerFormat === 'story' ? 'h-[200px]' : 'h-[120px]'} my-2`}>
+                                                <div className={`relative flex items-center justify-center ${flyerFormat === 'story' ? 'h-[160px]' : 'h-[100px]'} my-1`}>
                                                     {/* Radial Glow behind car */}
-                                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-20 blur-[60px] rounded-full opacity-40" style={{ backgroundColor: flyerColor }} />
+                                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-12 blur-[50px] rounded-full opacity-30" style={{ backgroundColor: flyerColor }} />
 
                                                     <div className="w-full h-full flex items-center justify-center relative z-10">
                                                         {existingImages[selectedFlyerImage] ? (
                                                             <img
                                                                 src={existingImages[selectedFlyerImage]?.startsWith('http') ? existingImages[selectedFlyerImage] : (API_URL + existingImages[selectedFlyerImage])}
-                                                                className="w-full h-full object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)]"
+                                                                className="w-full h-full object-contain filter drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)]"
                                                                 crossOrigin="anonymous"
                                                                 alt="Main car image"
                                                             />
                                                         ) : (
-                                                            <Car className="w-20 h-20 text-white/10" />
+                                                            <Car className="w-16 h-16 text-white/10" />
                                                         )}
                                                     </div>
                                                 </div>
@@ -1062,88 +1061,86 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                                 <div className="flex flex-col w-full">
 
                                                     {/* Title & Badge */}
-                                                    <div className="mb-4">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <div className="h-[2px] w-4 rounded-full" style={{ backgroundColor: flyerColor }} />
-                                                            <p className="text-[8px] font-black uppercase tracking-[0.4em] text-white/50">Oportunidade</p>
+                                                    <div className={flyerFormat === 'story' ? 'mb-3' : 'mb-1'}>
+                                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                                            <div className="h-[2px] w-3 rounded-full" style={{ backgroundColor: flyerColor }} />
+                                                            <p className="text-[7px] font-black uppercase tracking-widest text-white/40">Oferta Exclusiva</p>
                                                         </div>
-                                                        <h4 className="text-white uppercase leading-none font-black text-[26px] tracking-tighter">
+                                                        <h4 className={`text-white uppercase leading-tight font-black tracking-tighter ${flyerFormat === 'story' ? 'text-[22px]' : 'text-[16px]'}`}>
                                                             {formData.brand} <span className="block italic" style={{ color: flyerColor }}>{formData.name}</span>
                                                         </h4>
                                                     </div>
 
                                                     {/* Specs Grid */}
-                                                    <div className={`grid grid-cols-2 gap-2 mb-4 ${flyerFormat === 'feed' ? 'hidden' : 'block'}`}>
+                                                    <div className={`grid grid-cols-2 gap-1.5 ${flyerFormat === 'story' ? 'mb-3' : 'hidden'}`}>
                                                         {[
                                                             { label: 'ANO', val: formData.year },
-                                                            { label: 'QUILOMETRAGEM', val: `${formData.km} KM` },
+                                                            { label: 'KM', val: `${formData.km}` },
                                                             { label: 'CAMBIO', val: formData.transmission },
                                                             { label: 'MOTOR', val: formData.fuel }
                                                         ].map((spec, i) => (
-                                                            <div key={i} className="flex flex-col px-3 py-2.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl relative overflow-hidden">
-                                                                <span className="text-[7px] font-black text-white/30 uppercase tracking-widest mb-1">{spec.label}</span>
-                                                                <span className="text-[11px] text-white font-black truncate">{spec.val || '-'}</span>
+                                                            <div key={i} className="flex flex-col px-2.5 py-1.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl">
+                                                                <span className="text-[6px] font-black text-white/30 uppercase tracking-widest">{spec.label}</span>
+                                                                <span className="text-[9px] text-white font-black truncate">{spec.val || '-'}</span>
                                                             </div>
                                                         ))}
                                                     </div>
 
                                                     {/* Price & Call to Action */}
-                                                    <div className="flex items-end justify-between gap-4 mb-4">
-                                                        <div className="flex flex-col">
-                                                            <p className="text-[8px] font-black uppercase tracking-widest text-white/40 mb-1">Valor Especial</p>
-                                                            <p className="font-black tracking-tighter text-white drop-shadow-2xl text-[38px] leading-none">
-                                                                <span className="text-[16px] mr-1 opacity-60">R$</span>{formData.price.includes(',') ? formData.price : new Intl.NumberFormat('pt-BR').format(Number(formData.price))}
-                                                            </p>
-                                                        </div>
+                                                    <div className={flyerFormat === 'story' ? 'mb-3' : 'mb-1'}>
+                                                        <p className="text-[7px] font-black uppercase tracking-widest text-white/40 mb-0.5">Valor de Venda</p>
+                                                        <p className={`font-black tracking-tighter text-white drop-shadow-2xl leading-none ${flyerFormat === 'story' ? 'text-[32px]' : 'text-[24px]'}`}>
+                                                            <span className="text-[12px] mr-1 opacity-60">R$</span>{formData.price.includes(',') ? formData.price : new Intl.NumberFormat('pt-BR').format(Number(formData.price))}
+                                                        </p>
                                                     </div>
 
                                                     {/* Footer Glass Bar */}
-                                                    <div className="flex items-center justify-between bg-white/10 backdrop-blur-2xl border border-white/20 p-3.5 rounded-2xl w-full shadow-2xl relative overflow-hidden">
+                                                    <div className={`flex items-center justify-between bg-white/10 backdrop-blur-2xl border border-white/20 rounded-xl w-full shadow-2xl relative overflow-hidden ${flyerFormat === 'story' ? 'p-3' : 'p-2'}`}>
                                                         <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent pointer-events-none" />
                                                         <div className="flex flex-col relative z-10">
-                                                            <p className="text-[7px] font-black text-white/30 uppercase tracking-[0.3em] mb-0.5">FALE CONOSCO NO WHATSAPP</p>
-                                                            <p className="text-[13px] text-white font-black truncate max-w-[160px] leading-tight">{store?.storeName || 'Zapcar'}</p>
+                                                            <p className="text-[6px] font-black text-white/30 uppercase tracking-widest mb-0.5">NOSSO WHATSAPP</p>
+                                                            <p className={`text-white font-black truncate leading-tight ${flyerFormat === 'story' ? 'text-[12px] max-w-[160px]' : 'text-[10px] max-w-[140px]'}`}>{store?.storeName || 'Zapcar'}</p>
                                                         </div>
                                                         <div
-                                                            className="w-9 h-9 rounded-2xl flex items-center justify-center shadow-2xl rotate-3"
+                                                            className={`rounded-lg flex items-center justify-center shadow-2xl rotate-3 ${flyerFormat === 'story' ? 'w-8 h-8' : 'w-7 h-7'}`}
                                                             style={{ backgroundColor: flyerColor }}
                                                         >
-                                                            <Instagram className="w-5 h-5 text-white" />
+                                                            <Instagram className={flyerFormat === 'story' ? 'w-4 h-4 text-white' : 'w-3.5 h-3.5 text-white'} />
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        onClick={downloadFlyer}
-                                        disabled={loading}
-                                        className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110 border-2 border-white/10"
-                                        style={{ backgroundColor: `${flyerColor}CC`, backdropFilter: 'blur(10px)' }}
-                                    >
-                                        <Upload className="w-5 h-5 rotate-180" />
-                                        {loading ? '...' : 'Baixar'}
-                                    </button>
-                                    <button
-                                        onClick={shareFlyer}
-                                        disabled={loading}
-                                        className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110"
-                                        style={{ backgroundColor: flyerColor, boxShadow: `0 10px 15px -3px ${flyerColor}44` }}
-                                    >
-                                        <Instagram className="w-5 h-5" />
-                                        {loading ? '...' : 'Instagram'}
-                                    </button>
-                                </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={downloadFlyer}
+                                            disabled={loading}
+                                            className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110 border-2 border-white/10"
+                                            style={{ backgroundColor: `${flyerColor}CC`, backdropFilter: 'blur(10px)' }}
+                                        >
+                                            <Upload className="w-5 h-5 rotate-180" />
+                                            {loading ? '...' : 'Baixar'}
+                                        </button>
+                                        <button
+                                            onClick={shareFlyer}
+                                            disabled={loading}
+                                            className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110"
+                                            style={{ backgroundColor: flyerColor, boxShadow: `0 10px 15px -3px ${flyerColor}44` }}
+                                        >
+                                            <Instagram className="w-5 h-5" />
+                                            {loading ? '...' : 'Instagram'}
+                                        </button>
+                                    </div>
 
-                                <p className="text-center text-[10px] text-gray-400 uppercase font-bold tracking-widest">
-                                    Resolução sugerida: {flyerFormat === 'story' ? '1080x1920 (9:16)' : '1080x1080 (1:1)'}
-                                </p>
+                                    <p className="text-center text-[10px] text-gray-400 uppercase font-bold tracking-widest">
+                                        Resolução sugerida: {flyerFormat === 'story' ? '1080x1920 (9:16)' : '1080x1080 (1:1)'}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    }
+                    )}
                 </div>
             </div>
         </div>

@@ -875,7 +875,7 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                     )}
 
                     {/* --- MARKETING TAB --- */}
-                    {activeTab === 'marketing' &&
+                    {activeTab === 'marketing' && (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Text Area */}
                             <div className="space-y-4">
@@ -1112,32 +1112,32 @@ ${data.trava ? '✅ Trava Elétrica\n' : ''}${data.alarme ? '✅ Alarme\n' : ''}
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button
-                                            onClick={downloadFlyer}
-                                            disabled={loading}
-                                            className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110 border-2 border-white/10"
-                                            style={{ backgroundColor: `${flyerColor}CC`, backdropFilter: 'blur(10px)' }}
-                                        >
-                                            <Upload className="w-5 h-5 rotate-180" />
-                                            {loading ? '...' : 'Baixar'}
-                                        </button>
-                                        <button
-                                            onClick={shareFlyer}
-                                            disabled={loading}
-                                            className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110"
-                                            style={{ backgroundColor: flyerColor, boxShadow: `0 10px 15px -3px ${flyerColor}44` }}
-                                        >
-                                            <Instagram className="w-5 h-5" />
-                                            {loading ? '...' : 'Instagram'}
-                                        </button>
-                                    </div>
-
-                                    <p className="text-center text-[10px] text-gray-400 uppercase font-bold tracking-widest">
-                                        Resolução sugerida: {flyerFormat === 'story' ? '1080x1920 (9:16)' : '1080x1080 (1:1)'}
-                                    </p>
                                 </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={downloadFlyer}
+                                        disabled={loading}
+                                        className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110 border-2 border-white/10"
+                                        style={{ backgroundColor: `${flyerColor}CC`, backdropFilter: 'blur(10px)' }}
+                                    >
+                                        <Upload className="w-5 h-5 rotate-180" />
+                                        {loading ? '...' : 'Baixar'}
+                                    </button>
+                                    <button
+                                        onClick={shareFlyer}
+                                        disabled={loading}
+                                        className="text-white py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50 hover:brightness-110"
+                                        style={{ backgroundColor: flyerColor, boxShadow: `0 10px 15px -3px ${flyerColor}44` }}
+                                    >
+                                        <Instagram className="w-5 h-5" />
+                                        {loading ? '...' : 'Instagram'}
+                                    </button>
+                                </div>
+
+                                <p className="text-center text-[10px] text-gray-400 uppercase font-bold tracking-widest">
+                                    Resolução sugerida: {flyerFormat === 'story' ? '1080x1920 (9:16)' : '1080x1080 (1:1)'}
+                                </p>
                             </div>
                         </div>
                     )}

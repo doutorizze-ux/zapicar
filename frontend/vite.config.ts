@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo-z-green.png', 'logo-dark.png'],
+      includeAssets: ['favicon-car.png', 'logo-dark.png'],
       manifest: {
         name: 'Zapicar',
         short_name: 'Zapicar',
@@ -23,13 +23,13 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: '/logo-z-green.png',
+            src: '/favicon-car.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/logo-z-green.png',
+            src: '/favicon-car.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'

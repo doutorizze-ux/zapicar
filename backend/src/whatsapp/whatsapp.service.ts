@@ -441,7 +441,8 @@ Sou seu assistente virtual. Para começar, você pode:
         const text = `🏁 *O que deseja fazer agora?*
 
 1️⃣  *Procurar outro veículo*
-2️⃣  *Voltar ao menu principal*
+2️⃣  *Falar com Consultor*
+     _Atendimento humano personalizado_
 
 _Digite o número ou a opção desejada_`;
         await this.sendMessage(userId, jid, text);

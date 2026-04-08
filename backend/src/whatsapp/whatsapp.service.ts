@@ -35,6 +35,8 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
     private readonly SESSIONS_DIR = path.join(process.cwd(), 'whatsapp_sessions');
     private sessionStartTimes: Map<string, number> = new Map();
+    private inactivityStartTimes: Map<string, number> = new Map();
+    private qrLastLogTime: Map<string, number> = new Map();
 
     constructor(
         @InjectRepository(ChatMessage)
@@ -119,6 +121,10 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             return this.sessions.get(userId);
         }
 
+        if (!this.inactivityStartTimes.has(userId)) {
+            this.inactivityStartTimes.set(userId, Date.now());
+        }
+        
         this.sessionStartTimes.set(userId, Date.now());
         this.connectionStatuses.set(userId, 'CONNECTING');
         const sessionPath = path.join(this.SESSIONS_DIR, `user_${userId}`);
@@ -154,14 +160,23 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
             const { connection, lastDisconnect, qr } = update;
 
             if (qr) {
-                this.logger.log(`QR Code generated for User ${userId}`);
+                const lastLog = this.qrLastLogTime.get(userId) || 0;
+                if (Date.now() - lastLog > 60000) {
+                    this.logger.log(`QR Code generated for User ${userId}`);
+                    this.qrLastLogTime.set(userId, Date.now());
+                }
                 this.qrCodes.set(userId, qr);
                 this.connectionStatuses.set(userId, 'QR_READY');
             }
 
             if (connection === 'close') {
-                const shouldReconnect = (lastDisconnect?.error as any)?.output?.statusCode !== DisconnectReason.loggedOut;
-                this.logger.warn(`Connection closed for User ${userId}. Reconnecting: ${shouldReconnect}`);
+                const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
+                const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+                
+                // Only log warning if it's not a standard QR timeout (408)
+                if (statusCode !== DisconnectReason.timedOut) {
+                    this.logger.warn(`Connection closed for User ${userId}. Reconnecting: ${shouldReconnect}. Code: ${statusCode}`);
+                }
 
                 if (shouldReconnect) {
                     this.connectionStatuses.set(userId, 'DISCONNECTED');
@@ -183,6 +198,8 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
                 this.logger.log(`Connection opened for User ${userId}!`);
                 this.connectionStatuses.set(userId, 'CONNECTED');
                 this.qrCodes.delete(userId);
+                this.inactivityStartTimes.delete(userId);
+                this.qrLastLogTime.delete(userId);
             }
         });
 
@@ -203,14 +220,13 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
         return sock;
     }
 
-    // Interval to clean up inactive (stuck in QR) sessions
     private startInactivityCheck() {
         setInterval(() => {
             const now = Date.now();
             this.connectionStatuses.forEach((status, userId) => {
-                const started = this.sessionStartTimes.get(userId) || 0;
+                const started = this.inactivityStartTimes.get(userId);
                 // If stuck in QR / Connecting for > 5 mins (reduced from 10)
-                if ((status === 'QR_READY' || status === 'CONNECTING') && now - started > 300000) {
+                if (started && (status === 'QR_READY' || status === 'CONNECTING') && now - started > 300000) {
                     this.logger.log(`Session for ${userId} timed out (Inactive). Destroying.`);
                     this.deleteInstance(userId);
                 }
@@ -232,6 +248,8 @@ export class WhatsappService implements OnModuleInit, OnModuleDestroy {
 
         this.connectionStatuses.set(userId, 'DISCONNECTED');
         this.qrCodes.delete(userId);
+        this.inactivityStartTimes.delete(userId);
+        this.qrLastLogTime.delete(userId);
 
         const sessionPath = path.join(this.SESSIONS_DIR, `user_${userId}`);
         if (fs.existsSync(sessionPath)) {
